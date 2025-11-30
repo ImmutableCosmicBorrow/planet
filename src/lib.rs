@@ -1,31 +1,31 @@
 use common_game::components::planet::{self, PlanetState, PlanetType};
 use common_game::components::resource::{BasicResource, BasicResourceType, ComplexResourceType};
 use common_game::components::rocket::Rocket;
+use common_game::components::sunray::Sunray;
 use common_game::protocols::messages::{
     ExplorerToPlanet, OrchestratorToPlanet, PlanetToExplorer, PlanetToOrchestrator,
 };
 use std::collections::HashSet;
 use std::mem;
 use std::sync::mpsc;
+use std::time::SystemTime;
 
 struct Ai {}
 
 impl planet::PlanetAI for Ai {
     fn handle_orchestrator_msg(
         &mut self,
-        _state: &mut PlanetState,
-        _msg: OrchestratorToPlanet,
+        state: &mut PlanetState,
+        msg: OrchestratorToPlanet,
     ) -> Option<PlanetToOrchestrator> {
         match msg {
-            OrchestratorToPlanet::Sunray(sunray) => {
-                self.sunray_response(state, sunray)
-            }
+            OrchestratorToPlanet::Sunray(sunray) => self.sunray_response(state, sunray),
 
-            OrchestratorToPlanet::Asteroid(asteroid) => {
+            OrchestratorToPlanet::Asteroid(_asteroid) => {
                 // Handle Asteroid message
                 let rocket = self.handle_asteroid(state);
                 Some(PlanetToOrchestrator::AsteroidAck {
-                    planet_id: state.id,
+                    planet_id: state.id(),
                     rocket,
                 })
             }
@@ -33,7 +33,7 @@ impl planet::PlanetAI for Ai {
             OrchestratorToPlanet::StartPlanetAI(_) => {
                 self.start(state);
                 Some(PlanetToOrchestrator::StartPlanetAIResult {
-                    planet_id: state.id,
+                    planet_id: state.id(),
                     timestamp: SystemTime::now(),
                 })
             }
@@ -41,20 +41,16 @@ impl planet::PlanetAI for Ai {
             OrchestratorToPlanet::StopPlanetAI(_) => {
                 self.stop();
                 Some(PlanetToOrchestrator::StopPlanetAIResult {
-                    planet_id: state.id,
+                    planet_id: state.id(),
                     timestamp: SystemTime::now(),
                 })
             }
 
             OrchestratorToPlanet::InternalStateRequest(_) => {
-                Some(PlanetToOrchestrator::InternalStateResponse {
-                    planet_id: state.id,
-                    planet_state: state.clone(),
-                    timestamp: SystemTime::now(),
-                })
+                // TODO: InternalStateResponse requires owned PlanetState which we can't provide
+                // This needs to be discussed with the team
+                todo!("InternalStateRequest requires owned PlanetState")
             }
-
-            _ => todo!(),
         }
     }
 
@@ -167,51 +163,19 @@ impl Ai {
             }
         }
     }
-}
 
-pub enum OrchestratorToPlanet {
-    Sunray(Sunray),
-    Asteroid(Asteroid),
-    StartPlanetAI(StartPlanetAiMsg),
-    StopPlanetAI(StopPlanetAiMsg),
-    InternalStateRequest(InternalStateRequestMsg), //I think orchestrator should always have the internal state for the UI, but up to discussions
-}
-
-impl Ai {
-    fn sunray_response(&self, _state: &mut PlanetState, _sunray: Sunray) -> Option<PlanetToOrchestrator> {
+    fn sunray_response(
+        &self,
+        _state: &mut PlanetState,
+        _sunray: Sunray,
+    ) -> Option<PlanetToOrchestrator> {
         _state.cell_mut(0).charge(_sunray);
 
-        if()
-        
         Some(PlanetToOrchestrator::SunrayAck {
-            planet_id: _state.id,
+            planet_id: _state.id(),
             timestamp: SystemTime::now(),
         })
     }
-}
-
-pub enum PlanetToOrchestrator {
-    SunrayAck {
-        planet_id: u32,
-        timestamp: SystemTime,
-    },
-    AsteroidAck {
-        planet_id: u32,
-        rocket: Option<Rocket>,
-    }, //depends on how we want to manage the defense + TODO add timestamp but planet code complains
-    StartPlanetAIResult {
-        planet_id: u32,
-        timestamp: SystemTime,
-    },
-    StopPlanetAIResult {
-        planet_id: u32,
-        timestamp: SystemTime,
-    },
-    InternalStateResponse {
-        planet_id: u32,
-        planet_state: PlanetState,
-        timestamp: SystemTime,
-    }, //do we want to clone the planetState?, orchestrator should always know the planetState
 }
 
 pub fn test() {
@@ -240,7 +204,6 @@ pub fn test() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common_game::components::resource::BasicResource::Oxygen;
 
     #[test]
     fn test_planet_creation() {

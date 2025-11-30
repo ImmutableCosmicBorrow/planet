@@ -34,6 +34,8 @@ impl planet::PlanetAI for Ai {
                 // This needs to be discussed with the team
                 todo!("InternalStateRequest requires owned PlanetState")
             }
+
+            _ => todo!(),
         }
     }
 
@@ -139,13 +141,17 @@ impl Ai {
 
     fn sunray_response(
         &self,
-        _state: &mut PlanetState,
-        _sunray: Sunray,
+        state: &mut PlanetState,
+        sunray: Sunray,
     ) -> Option<PlanetToOrchestrator> {
-        _state.cell_mut(0).charge(_sunray);
+        if state.cell(0).is_charged() && state.has_rocket() {
+            let _ = state.build_rocket(0); // Currently the planet doesn't have an Option<Rocket> but can only generate one when needed
+        }
+
+        state.cell_mut(0).charge(sunray);
 
         Some(PlanetToOrchestrator::SunrayAck {
-            planet_id: _state.id(),
+            planet_id: state.id(),
             timestamp: SystemTime::now(),
         })
     }

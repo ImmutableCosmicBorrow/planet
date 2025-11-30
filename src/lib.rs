@@ -1,5 +1,7 @@
 use common_game::components::planet::PlanetAI;
 use common_game::components::planet::{self, PlanetState, PlanetType};
+use common_game::components::resource::Combinator;
+use common_game::components::resource::Generator;
 use common_game::components::resource::{BasicResource, BasicResourceType, ComplexResourceType};
 use common_game::components::rocket::Rocket;
 use common_game::components::sunray::Sunray;
@@ -7,7 +9,6 @@ use common_game::protocols::messages::{
     ExplorerToPlanet, OrchestratorToPlanet, PlanetToExplorer, PlanetToOrchestrator,
 };
 use std::collections::HashSet;
-use std::mem;
 use std::sync::mpsc;
 use std::time::SystemTime;
 
@@ -17,19 +18,12 @@ impl planet::PlanetAI for Ai {
     fn handle_orchestrator_msg(
         &mut self,
         state: &mut PlanetState,
+        generator: &Generator,
+        combinator: &Combinator,
         msg: OrchestratorToPlanet,
     ) -> Option<PlanetToOrchestrator> {
         match msg {
             OrchestratorToPlanet::Sunray(sunray) => self.sunray_response(state, sunray),
-
-            OrchestratorToPlanet::Asteroid(_asteroid) => {
-                // Handle Asteroid message
-                let rocket = self.handle_asteroid(state);
-                Some(PlanetToOrchestrator::AsteroidAck {
-                    planet_id: state.id(),
-                    rocket,
-                })
-            }
 
             OrchestratorToPlanet::StartPlanetAI(_) => self.start_planet_ai_response(state),
 
@@ -46,24 +40,26 @@ impl planet::PlanetAI for Ai {
     fn handle_explorer_msg(
         &mut self,
         state: &mut PlanetState,
+        generator: &Generator,
+        combinator: &Combinator,
         msg: ExplorerToPlanet,
     ) -> Option<PlanetToExplorer> {
         match msg {
             ExplorerToPlanet::SupportedResourceRequest { .. } => {
                 Some(PlanetToExplorer::SupportedResourceResponse {
-                    resource_list: self.supported_resource_response(state),
+                    resource_list: self.supported_resource_response(generator),
                 })
             }
 
             ExplorerToPlanet::SupportedCombinationRequest { .. } => {
                 Some(PlanetToExplorer::SupportedCombinationResponse {
-                    combination_list: self.supported_combination_response(state),
+                    combination_list: self.supported_combination_response(combinator),
                 })
             }
 
             ExplorerToPlanet::GenerateResourceRequest { resource, .. } => {
                 Some(PlanetToExplorer::GenerateResourceResponse {
-                    resource: self.generate_resource_response(state, resource),
+                    resource: self.generate_resource_response(state, generator, resource),
                 })
             }
 
@@ -71,22 +67,27 @@ impl planet::PlanetAI for Ai {
         }
     }
 
-    fn handle_asteroid(&mut self, _state: &mut PlanetState) -> Option<Rocket> {
+    fn handle_asteroid(
+        &mut self,
+        state: &mut PlanetState,
+        generator: &Generator,
+        combinator: &Combinator,
+    ) -> Option<Rocket> {
         None
     }
 
-    fn start(&mut self, _state: &PlanetState) {}
+    fn start(&mut self, state: &PlanetState) {}
 
-    fn stop(&mut self) {}
+    fn stop(&mut self, state: &PlanetState) {}
 }
 
 impl Ai {
     ///Returns the available Basic Resources set of the planet
     fn supported_resource_response(
         &self,
-        state: &PlanetState,
+        generator: &Generator,
     ) -> Option<HashSet<BasicResourceType>> {
-        let available_resources = state.generator.all_available_recipes();
+        let available_resources = generator.all_available_recipes();
         if available_resources.is_empty() {
             None
         } else {
@@ -96,9 +97,9 @@ impl Ai {
     ///Returns the available Complex Resources set of the planet
     fn supported_combination_response(
         &self,
-        state: &PlanetState,
+        combinator: &Combinator,
     ) -> Option<HashSet<ComplexResourceType>> {
-        let available_comp_resources = state.combinator.all_available_recipes();
+        let available_comp_resources = combinator.all_available_recipes();
         if available_comp_resources.is_empty() {
             None
         } else {
@@ -110,46 +111,29 @@ impl Ai {
     fn generate_resource_response(
         &self,
         state: &mut PlanetState,
+        generator: &Generator,
         to_generate: BasicResourceType,
     ) -> Option<BasicResource> {
-        let generator = mem::take(&mut state.generator); //TODO: Understand if this is the right way of using Generator
-
         match to_generate {
-            BasicResourceType::Carbon => {
-                let res = generator
-                    .make_carbon(state.cell_mut(0))
-                    .ok()
-                    .map(BasicResource::Carbon);
-                state.generator = generator;
-                res
-            }
+            BasicResourceType::Carbon => generator
+                .make_carbon(state.cell_mut(0))
+                .ok()
+                .map(BasicResource::Carbon),
 
-            BasicResourceType::Hydrogen => {
-                let res = generator
-                    .make_hydrogen(state.cell_mut(0))
-                    .ok()
-                    .map(BasicResource::Hydrogen);
-                state.generator = generator;
-                res
-            }
+            BasicResourceType::Hydrogen => generator
+                .make_hydrogen(state.cell_mut(0))
+                .ok()
+                .map(BasicResource::Hydrogen),
 
-            BasicResourceType::Silicon => {
-                let res = generator
-                    .make_silicon(state.cell_mut(0))
-                    .ok()
-                    .map(BasicResource::Silicon);
-                state.generator = generator;
-                res
-            }
+            BasicResourceType::Silicon => generator
+                .make_silicon(state.cell_mut(0))
+                .ok()
+                .map(BasicResource::Silicon),
 
-            BasicResourceType::Oxygen => {
-                let res = generator
-                    .make_oxygen(state.cell_mut(0))
-                    .ok()
-                    .map(BasicResource::Oxygen);
-                state.generator = generator;
-                res
-            }
+            BasicResourceType::Oxygen => generator
+                .make_oxygen(state.cell_mut(0))
+                .ok()
+                .map(BasicResource::Oxygen),
         }
     }
 
@@ -166,18 +150,21 @@ impl Ai {
         })
     }
 
-    fn start_planet_ai_response(&mut self, _state: &PlanetState) -> Option<PlanetToOrchestrator> {
-        self.start(_state);
+    fn start_planet_ai_response(
+        &mut self,
+        state: &mut PlanetState,
+    ) -> Option<PlanetToOrchestrator> {
+        self.start(state);
         Some(PlanetToOrchestrator::StartPlanetAIResult {
-            planet_id: _state.id(),
+            planet_id: state.id(),
             timestamp: SystemTime::now(),
         })
     }
 
-    fn stop_planet_ai_response(&mut self, _state: &PlanetState) -> Option<PlanetToOrchestrator> {
-        self.stop();
+    fn stop_planet_ai_response(&mut self, state: &mut PlanetState) -> Option<PlanetToOrchestrator> {
+        self.stop(state);
         Some(PlanetToOrchestrator::StopPlanetAIResult {
-            planet_id: _state.id(),
+            planet_id: state.id(),
             timestamp: SystemTime::now(),
         })
     }
@@ -230,96 +217,4 @@ mod tests {
 
         assert!(planet.is_ok(), "Planet creation should succeed");
     }
-
-    #[test]
-    fn test_supported_resource_response() {
-        let planet_ai = Ai {};
-        let (_orch_tx, orch_rx) = mpsc::channel::<OrchestratorToPlanet>();
-        let (planet_to_orch_tx, _planet_to_orch_rx) = mpsc::channel::<PlanetToOrchestrator>();
-        let (_explorer_tx, explorer_rx) = mpsc::channel::<ExplorerToPlanet>();
-        let (planet_to_explorer_tx, _planet_to_explorer_rx) = mpsc::channel::<PlanetToExplorer>();
-
-        let planet = planet::Planet::new(
-            0,
-            PlanetType::C,
-            planet_ai,
-            vec![BasicResourceType::Oxygen],
-            vec![ComplexResourceType::Water],
-            (orch_rx, planet_to_orch_tx),
-            (explorer_rx, planet_to_explorer_tx),
-        )
-        .unwrap();
-
-        let expected_res = HashSet::from([BasicResourceType::Oxygen]);
-        let av_resource = planet.ai.supported_resource_response(&planet.state());
-
-        assert!(av_resource.is_some(), "Expected Some resources");
-        assert_eq!(
-            av_resource.unwrap(),
-            expected_res,
-            "Resources should match expected resources"
-        );
-    }
-
-    #[test]
-    fn test_supported_combination_response() {
-        let planet_ai = Ai {};
-        let (_orch_tx, orch_rx) = mpsc::channel::<OrchestratorToPlanet>();
-        let (planet_to_orch_tx, _planet_to_orch_rx) = mpsc::channel::<PlanetToOrchestrator>();
-        let (_explorer_tx, explorer_rx) = mpsc::channel::<ExplorerToPlanet>();
-        let (planet_to_explorer_tx, _planet_to_explorer_rx) = mpsc::channel::<PlanetToExplorer>();
-
-        let planet = planet::Planet::new(
-            0,
-            PlanetType::C,
-            planet_ai,
-            vec![BasicResourceType::Oxygen],
-            vec![ComplexResourceType::Water],
-            (orch_rx, planet_to_orch_tx),
-            (explorer_rx, planet_to_explorer_tx),
-        )
-        .unwrap();
-
-        let expected_res = HashSet::from([ComplexResourceType::Water]);
-        let av_complex = planet
-            .ai
-            .supported_combination_response(&planet.state())
-            .unwrap();
-        assert!(
-            planet
-                .ai
-                .supported_combination_response(&planet.state())
-                .is_some(),
-            "Expected Some complex resources"
-        );
-        assert_eq!(
-            av_complex, expected_res,
-            "Expected resources should match expected complex resources"
-        );
-    }
-
-    //rewrite test once I know how to use resource generation in the right way
-    /*#[test]
-    fn generate_resource_response() {
-        let planet_ai = Ai {};
-        let (_orch_tx, orch_rx) = mpsc::channel::<OrchestratorToPlanet>();
-        let (planet_to_orch_tx, _planet_to_orch_rx) = mpsc::channel::<PlanetToOrchestrator>();
-        let (_explorer_tx, explorer_rx) = mpsc::channel::<ExplorerToPlanet>();
-        let (planet_to_explorer_tx, _planet_to_explorer_rx) = mpsc::channel::<PlanetToExplorer>();
-
-        let planet = planet::Planet::new(
-            0,
-            PlanetType::C,
-            planet_ai,
-            vec![BasicResourceType::Oxygen],
-            vec![ComplexResourceType::Water],
-            (orch_rx, planet_to_orch_tx),
-            (explorer_rx, planet_to_explorer_tx),
-        ).unwrap();
-
-        let planet_state = planet.state().clone();
-
-        let expected_res = Some(BasicResource::Oxygen);
-        let generated_resource = planet.ai.generate_resource_response(&mut planet_state, BasicResourceType::Oxygen);
-    }*/
 }

@@ -5,7 +5,7 @@ version = 4
 [[package]]
 name = "common-game"
 version = "0.1.0"
-source = "git+https://github.com/unitn-ap-2025/common#fba4fc0169ad8c35f946e11fc12599ec7b932eca"
+source = "git+https://github.com/unitn-ap-2025/common#ae76abd1479d344ae1846c3218474a77d790b8fa"
 dependencies = [
  "paste",
 ]

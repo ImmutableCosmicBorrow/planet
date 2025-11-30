@@ -1,3 +1,4 @@
+use common_game::components::planet::PlanetAI;
 use common_game::components::planet::{self, PlanetState, PlanetType};
 use common_game::components::resource::{BasicResource, BasicResourceType, ComplexResourceType};
 use common_game::components::rocket::Rocket;
@@ -30,21 +31,9 @@ impl planet::PlanetAI for Ai {
                 })
             }
 
-            OrchestratorToPlanet::StartPlanetAI(_) => {
-                self.start(state);
-                Some(PlanetToOrchestrator::StartPlanetAIResult {
-                    planet_id: state.id(),
-                    timestamp: SystemTime::now(),
-                })
-            }
+            OrchestratorToPlanet::StartPlanetAI(_) => self.start_planet_ai_response(state),
 
-            OrchestratorToPlanet::StopPlanetAI(_) => {
-                self.stop();
-                Some(PlanetToOrchestrator::StopPlanetAIResult {
-                    planet_id: state.id(),
-                    timestamp: SystemTime::now(),
-                })
-            }
+            OrchestratorToPlanet::StopPlanetAI(_) => self.stop_planet_ai_response(state),
 
             OrchestratorToPlanet::InternalStateRequest(_) => {
                 // TODO: InternalStateResponse requires owned PlanetState which we can't provide
@@ -172,6 +161,22 @@ impl Ai {
         _state.cell_mut(0).charge(_sunray);
 
         Some(PlanetToOrchestrator::SunrayAck {
+            planet_id: _state.id(),
+            timestamp: SystemTime::now(),
+        })
+    }
+
+    fn start_planet_ai_response(&mut self, _state: &PlanetState) -> Option<PlanetToOrchestrator> {
+        self.start(_state);
+        Some(PlanetToOrchestrator::StartPlanetAIResult {
+            planet_id: _state.id(),
+            timestamp: SystemTime::now(),
+        })
+    }
+
+    fn stop_planet_ai_response(&mut self, _state: &PlanetState) -> Option<PlanetToOrchestrator> {
+        self.stop();
+        Some(PlanetToOrchestrator::StopPlanetAIResult {
             planet_id: _state.id(),
             timestamp: SystemTime::now(),
         })

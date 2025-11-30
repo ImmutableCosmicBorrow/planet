@@ -31,8 +31,13 @@ impl planet::PlanetAI for Ai {
 
             OrchestratorToPlanet::InternalStateRequest(_) => {
                 // TODO: InternalStateResponse requires owned PlanetState which we can't provide
-                // This needs to be discussed with the team
-                todo!("InternalStateRequest requires owned PlanetState")
+                // We shoudl open an issue to discuss how to handle this on the common crate
+
+                Some(PlanetToOrchestrator::InternalStateResponse {
+                    planet_id: state.id(),
+                    timestamp: SystemTime::now(),
+                    planet_state: todo!(),
+                })
             }
 
             _ => todo!(),

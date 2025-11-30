@@ -16,7 +16,46 @@ impl planet::PlanetAI for Ai {
         _state: &mut PlanetState,
         _msg: OrchestratorToPlanet,
     ) -> Option<PlanetToOrchestrator> {
-        None
+        match msg {
+            OrchestratorToPlanet::Sunray(sunray) => {
+                self.sunray_response(state, sunray)
+            }
+
+            OrchestratorToPlanet::Asteroid(asteroid) => {
+                // Handle Asteroid message
+                let rocket = self.handle_asteroid(state);
+                Some(PlanetToOrchestrator::AsteroidAck {
+                    planet_id: state.id,
+                    rocket,
+                })
+            }
+
+            OrchestratorToPlanet::StartPlanetAI(_) => {
+                self.start(state);
+                Some(PlanetToOrchestrator::StartPlanetAIResult {
+                    planet_id: state.id,
+                    timestamp: SystemTime::now(),
+                })
+            }
+
+            OrchestratorToPlanet::StopPlanetAI(_) => {
+                self.stop();
+                Some(PlanetToOrchestrator::StopPlanetAIResult {
+                    planet_id: state.id,
+                    timestamp: SystemTime::now(),
+                })
+            }
+
+            OrchestratorToPlanet::InternalStateRequest(_) => {
+                Some(PlanetToOrchestrator::InternalStateResponse {
+                    planet_id: state.id,
+                    planet_state: state.clone(),
+                    timestamp: SystemTime::now(),
+                })
+            }
+
+            _ => todo!(),
+        }
     }
 
     fn handle_explorer_msg(
@@ -37,13 +76,11 @@ impl planet::PlanetAI for Ai {
                 })
             }
 
-            ExplorerToPlanet::GenerateResourceRequest {
-
-                resource,
-                ..
-            } => Some(PlanetToExplorer::GenerateResourceResponse {
-                resource: self.generate_resource_response(state, resource),
-            }),
+            ExplorerToPlanet::GenerateResourceRequest { resource, .. } => {
+                Some(PlanetToExplorer::GenerateResourceResponse {
+                    resource: self.generate_resource_response(state, resource),
+                })
+            }
 
             _ => todo!(),
         }
@@ -130,6 +167,51 @@ impl Ai {
             }
         }
     }
+}
+
+pub enum OrchestratorToPlanet {
+    Sunray(Sunray),
+    Asteroid(Asteroid),
+    StartPlanetAI(StartPlanetAiMsg),
+    StopPlanetAI(StopPlanetAiMsg),
+    InternalStateRequest(InternalStateRequestMsg), //I think orchestrator should always have the internal state for the UI, but up to discussions
+}
+
+impl Ai {
+    fn sunray_response(&self, _state: &mut PlanetState, _sunray: Sunray) -> Option<PlanetToOrchestrator> {
+        _state.cell_mut(0).charge(_sunray);
+
+        if()
+        
+        Some(PlanetToOrchestrator::SunrayAck {
+            planet_id: _state.id,
+            timestamp: SystemTime::now(),
+        })
+    }
+}
+
+pub enum PlanetToOrchestrator {
+    SunrayAck {
+        planet_id: u32,
+        timestamp: SystemTime,
+    },
+    AsteroidAck {
+        planet_id: u32,
+        rocket: Option<Rocket>,
+    }, //depends on how we want to manage the defense + TODO add timestamp but planet code complains
+    StartPlanetAIResult {
+        planet_id: u32,
+        timestamp: SystemTime,
+    },
+    StopPlanetAIResult {
+        planet_id: u32,
+        timestamp: SystemTime,
+    },
+    InternalStateResponse {
+        planet_id: u32,
+        planet_state: PlanetState,
+        timestamp: SystemTime,
+    }, //do we want to clone the planetState?, orchestrator should always know the planetState
 }
 
 pub fn test() {

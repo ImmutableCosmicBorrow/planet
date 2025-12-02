@@ -1,13 +1,11 @@
 use common_game::components::planet::PlanetAI;
 use common_game::components::planet::{self, PlanetState, PlanetType};
-use common_game::components::resource::Combinator;
+use common_game::components::resource::{Combinator, ComplexResource, ComplexResourceRequest};
 use common_game::components::resource::Generator;
 use common_game::components::resource::{BasicResource, BasicResourceType, ComplexResourceType};
 use common_game::components::rocket::Rocket;
 use common_game::components::sunray::Sunray;
-use common_game::protocols::messages::{
-    ExplorerToPlanet, OrchestratorToPlanet, PlanetToExplorer, PlanetToOrchestrator,
-};
+use common_game::protocols::messages::{ExplorerToPlanet, OrchestratorToPlanet, PlanetToExplorer, PlanetToOrchestrator};
 use std::collections::HashSet;
 use std::sync::mpsc;
 use std::time::SystemTime;
@@ -70,7 +68,32 @@ impl planet::PlanetAI for Ai {
                 })
             }
 
-            _ => todo!(),
+            ExplorerToPlanet::CombineResourceRequest {
+                msg,
+                ..
+            } => {
+                Some(PlanetToExplorer::CombineResourceResponse {
+                    complex_response : self.combine_resource_response(state, combinator, msg)
+                })
+            }
+
+
+            ExplorerToPlanet::AvailableEnergyCellRequest { .. } => {
+                Some(PlanetToExplorer::AvailableEnergyCellResponse {
+                    available_cells : {
+                        if state.cell(0).is_charged() { 1 } else { 0 }
+                    }
+                })
+            }
+
+            ExplorerToPlanet::InternalStateRequest { .. } => {
+                // TODO: Same as OrchestratorToPlanet::InternalStateRequest: InternalStateResponse requires owned PlanetState which we can't provide
+                // We should open an issue to discuss how to handle this on the common crate
+
+                Some(PlanetToExplorer::InternalStateResponse {
+                    planet_state : todo!(),
+                })
+            }
         }
     }
 
@@ -80,7 +103,16 @@ impl planet::PlanetAI for Ai {
         generator: &Generator,
         combinator: &Combinator,
     ) -> Option<Rocket> {
-        None
+        // If we have a rocket launch the rocket, otherwise if the energy cell is available use it to build the rocket and launch it, otherwise None
+        if state.has_rocket() {
+            state.take_rocket()
+        } else if state.cell(0).is_charged() {
+            let _ = state.build_rocket(0);
+            state.take_rocket()
+        } else {
+            None
+        }
+
     }
 
     fn start(&mut self, state: &PlanetState) {}
@@ -141,6 +173,46 @@ impl Ai {
                 .make_oxygen(state.cell_mut(0))
                 .ok()
                 .map(BasicResource::Oxygen),
+        }
+    }
+
+    // Returns the optional complex resource created
+    fn combine_resource_response(
+        &self,
+        state: &mut PlanetState,
+        combinator: &Combinator,
+        msg : ComplexResourceRequest
+    ) -> Option<ComplexResource> {
+        match msg {
+            ComplexResourceRequest::Water(r1,r2) => combinator
+                .make_water(r1, r2, state.cell_mut(0))
+                .ok()
+                .map(ComplexResource::Water),
+
+            ComplexResourceRequest::Diamond(r1, r2) => combinator
+                .make_diamond(r1, r2, state.cell_mut(0))
+                .ok()
+                .map(ComplexResource::Diamond),
+
+            ComplexResourceRequest::Life(r1, r2) => combinator
+                .make_life(r1, r2, state.cell_mut(0))
+                .ok()
+                .map(ComplexResource::Life),
+
+            ComplexResourceRequest::Robot(r1, r2) => combinator
+                .make_robot(r1, r2, state.cell_mut(0))
+                .ok()
+                .map(ComplexResource::Robot),
+
+            ComplexResourceRequest::Dolphin(r1, r2) => combinator
+                .make_dolphin(r1, r2, state.cell_mut(0))
+                .ok()
+                .map(ComplexResource::Dolphin),
+
+            ComplexResourceRequest::AIPartner(r1, r2) => combinator
+                .make_aipartner(r1, r2, state.cell_mut(0))
+                .ok()
+                .map(ComplexResource::AIPartner)
         }
     }
 

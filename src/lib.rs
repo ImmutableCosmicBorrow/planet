@@ -15,7 +15,7 @@ use std::sync::mpsc;
 
 //TODO: ADD RANDOM GENERATION LOGIC
 #[allow(dead_code)]
-struct Ai {
+pub struct Ai {
     is_ai_active: bool,
     random_mode: bool,
     rocket_gen_coeff: f32,
@@ -275,7 +275,7 @@ impl Ai {
         sunray: Sunray,
     ) -> Option<PlanetToOrchestrator> {
         if state.cell(0).is_charged() && state.has_rocket() {
-            let _ = state.build_rocket(0); // Currently the planet doesn't have an Option<Rocket> but can only generate one when needed
+            let _ = state.build_rocket(0);
         }
 
         state.cell_mut(0).charge(sunray);
@@ -303,92 +303,155 @@ impl Ai {
     }
 }
 
-pub fn test() {
-    let mut planet_ai = Ai::new(false, 0.0, 0.0, 0.0);
-    planet_ai.is_ai_active = true;
-
-    let (_orch_tx, orch_rx) = mpsc::channel::<OrchestratorToPlanet>();
-    let (planet_to_orch_tx, _planet_to_orch_rx) = mpsc::channel::<PlanetToOrchestrator>();
-    let (_explorer_tx, explorer_rx) = mpsc::channel::<ExplorerToPlanet>();
-    let (_planet_to_explorer_tx, _planet_to_explorer_rx) = mpsc::channel::<PlanetToExplorer>();
-
-    let planet = planet::Planet::new(
+/// Creates a new Planet instance with the provided AI and communication channels.
+///
+/// # Arguments
+/// * `planet_ai` - The AI implementation that will control the planet's behavior
+/// * `gen_rules` - Vector of basic resource types that the planet can generate (must not be empty)
+/// * `comb_rules` - Vector of complex resource types that the planet can combine
+/// * `orchestrator_channels` - Tuple of (receiver, sender) for communication with the orchestrator
+/// * `explorers_receiver` - Receiver channel for messages from explorers
+///
+/// # Returns
+/// * `Ok(Planet)` - Successfully created planet with ID 0 and type C
+/// * `Err(String)` - Error message if planet creation fails (e.g., empty gen_rules)
+pub fn create_planet(
+    planet_ai: Ai,
+    gen_rules: Vec<BasicResourceType>,
+    comb_rules: Vec<ComplexResourceType>,
+    orchestrator_channels: (
+        mpsc::Receiver<OrchestratorToPlanet>,
+        mpsc::Sender<PlanetToOrchestrator>,
+    ),
+    explorers_receiver: mpsc::Receiver<ExplorerToPlanet>,
+) -> Result<planet::Planet, String> {
+    planet::Planet::new(
         0,
         PlanetType::C,
         Box::new(planet_ai),
-        Vec::<BasicResourceType>::new(),
-        Vec::<ComplexResourceType>::new(),
-        (orch_rx, planet_to_orch_tx),
-        explorer_rx,
-    );
-
-    match planet {
-        Ok(_) => println!("Planet created successfully"),
-        Err(e) => println!("Error creating planet: {}", e),
-    }
+        gen_rules,
+        comb_rules,
+        orchestrator_channels,
+        explorers_receiver,
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    /// Test that AI coefficients within the valid range [0.0, 1.0] are preserved
+    #[test]
+    fn planet_ai_valid_coefficient_creation() {
+        // Test coefficients at boundaries
+        let planet_ai_min = Ai::new(true, 0.0, 0.0, 0.0);
+        let planet_ai_max = Ai::new(false, 1.0, 1.0, 1.0);
+
+        // Test coefficients in the middle of the range
+        let planet_ai_mid = Ai::new(true, 0.5, 0.7, 0.3);
+
+        // Verify that valid coefficients are preserved exactly
+        assert_eq!(
+            planet_ai_min.rocket_gen_coeff, 0.0,
+            "Rocket coefficient at minimum should be 0.0"
+        );
+        assert_eq!(
+            planet_ai_min.basic_gen_coeff, 0.0,
+            "Basic resource coefficient at minimum should be 0.0"
+        );
+        assert_eq!(
+            planet_ai_min.complex_gen_coeff, 0.0,
+            "Complex resource coefficient at minimum should be 0.0"
+        );
+
+        assert_eq!(
+            planet_ai_max.rocket_gen_coeff, 1.0,
+            "Rocket coefficient at maximum should be 1.0"
+        );
+        assert_eq!(
+            planet_ai_max.basic_gen_coeff, 1.0,
+            "Basic resource coefficient at maximum should be 1.0"
+        );
+        assert_eq!(
+            planet_ai_max.complex_gen_coeff, 1.0,
+            "Complex resource coefficient at maximum should be 1.0"
+        );
+
+        assert_eq!(
+            planet_ai_mid.rocket_gen_coeff, 0.5,
+            "Rocket coefficient in range should be preserved"
+        );
+        assert_eq!(
+            planet_ai_mid.basic_gen_coeff, 0.7,
+            "Basic resource coefficient in range should be preserved"
+        );
+        assert_eq!(
+            planet_ai_mid.complex_gen_coeff, 0.3,
+            "Complex resource coefficient in range should be preserved"
+        );
+    }
+
+    /// Test that AI coefficients are correctly clamped to the valid range [0.0, 1.0]
+    #[test]
+    fn planet_ai_wrong_coefficient_creation() {
+        // Test coefficients outside valid range (should be clamped)
+        let test_cases = [
+            ((-0.7, 0.0, 0.0), (0.0, 0.0, 0.0)),
+            ((7.9, 0.0, 0.0), (1.0, 0.0, 0.0)),
+            ((0.7, -0.6, 0.0), (0.7, 0.0, 0.0)),
+            ((0.7, 3.5, 0.0), (0.7, 1.0, 0.0)),
+            ((0.7, 0.6, -5.0), (0.7, 0.6, 0.0)),
+            ((0.7, 0.6, 4.0), (0.7, 0.6, 1.0)),
+        ];
+
+        for ((rocket_in, basic_in, complex_in), (rocket_out, basic_out, complex_out)) in test_cases
+        {
+            let ai = Ai::new(true, rocket_in, basic_in, complex_in);
+
+            assert_eq!(
+                ai.rocket_gen_coeff, rocket_out,
+                "Rocket coefficient {} should be clamped to {}",
+                rocket_in, rocket_out
+            );
+            assert_eq!(
+                ai.basic_gen_coeff, basic_out,
+                "Basic resource coefficient {} should be clamped to {}",
+                basic_in, basic_out
+            );
+            assert_eq!(
+                ai.complex_gen_coeff, complex_out,
+                "Complex resource coefficient {} should be clamped to {}",
+                complex_in, complex_out
+            );
+        }
+    }
+
+    /// Test that a planet can be successfully created using the create_planet function
     #[test]
     fn test_planet_creation() {
-        let mut planet_ai = Ai::new(false, 0.0, 0.0, 0.0);
-        planet_ai.is_ai_active = true;
+        // Create an AI with all coefficients set to 0 (no random generation)
+        let planet_ai = Ai::new(false, 0.0, 0.0, 0.0);
 
-        let planet_ai_wrong_rocket_coeff = Ai::new(true, -0.7, 0.0, 0.0);
-        let planet_ai_wrong_rocket_coeff_larger = Ai::new(true, 7.9, 0.0, 0.0);
-
-        let planet_ai_wrong_basic_res_coeff = Ai::new(true, 0.7, -0.6, 0.0);
-        let planet_ai_wrong_basic_res_coeff_larger = Ai::new(true, 0.7, 3.5, 0.0);
-
-        let planet_ai_wrong_complex_res_coeff = Ai::new(true, 0.7, 0.6, -5.0);
-        let planet_ai_wrong_complex_res_coeff_larger = Ai::new(true, 0.7, 0.6, 4.0);
-
+        // Set up communication channels for orchestrator
         let (_orch_tx, orch_rx) = mpsc::channel::<OrchestratorToPlanet>();
         let (planet_to_orch_tx, _planet_to_orch_rx) = mpsc::channel::<PlanetToOrchestrator>();
-        let (_explorer_tx, explorer_rx) = mpsc::channel::<ExplorerToPlanet>();
-        let (_planet_to_explorer_tx, _planet_to_explorer_rx) = mpsc::channel::<PlanetToExplorer>();
 
-        let planet = planet::Planet::new(
-            0,
-            PlanetType::C,
-            Box::new(planet_ai),
+        // Set up communication channel for explorers
+        let (_explorer_tx, explorer_rx) = mpsc::channel::<ExplorerToPlanet>();
+
+        // Create a planet with basic resource (Oxygen) and complex resource (Water) generation capabilities
+        let planet = create_planet(
+            planet_ai,
             vec![BasicResourceType::Oxygen],
             vec![ComplexResourceType::Water],
             (orch_rx, planet_to_orch_tx),
             explorer_rx,
         );
 
-        assert!(planet.is_ok(), "Planet creation should succeed");
-
-        //Test correct creation of Ai with probability coefficients
-        assert_eq!(
-            planet_ai_wrong_rocket_coeff.rocket_gen_coeff, 0.0,
-            "Rocket Coefficient should be 0"
-        );
-        assert_eq!(
-            planet_ai_wrong_rocket_coeff_larger.rocket_gen_coeff, 1.0,
-            "Rocket Coefficient should be 1"
-        );
-
-        assert_eq!(
-            planet_ai_wrong_basic_res_coeff.basic_gen_coeff, 0.0,
-            "Basic Resource Coefficient should be 0"
-        );
-        assert_eq!(
-            planet_ai_wrong_basic_res_coeff_larger.basic_gen_coeff, 1.0,
-            "Basic Resource Coefficient should be 1"
-        );
-
-        assert_eq!(
-            planet_ai_wrong_complex_res_coeff.complex_gen_coeff, 0.0,
-            "Complex Resource Coefficient should be 0"
-        );
-        assert_eq!(
-            planet_ai_wrong_complex_res_coeff_larger.complex_gen_coeff, 1.0,
-            "Complex Resource Coefficient should be 1"
+        assert!(
+            planet.is_ok(),
+            "Planet creation should succeed, but got: {:?}",
+            planet.err()
         );
     }
 }

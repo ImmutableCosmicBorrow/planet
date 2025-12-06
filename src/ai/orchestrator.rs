@@ -21,7 +21,7 @@ pub(super) fn handle_message(
         OrchestratorToPlanet::InternalStateRequest => handle_internal_state_request(ai, state),
 
         _ => {
-            // Unhandled message
+            // Other messages are currently handled by the planet
             None
         }
     }
@@ -39,7 +39,7 @@ fn handle_sunray(
     state.cell_mut(0).charge(sunray);
 
     if let Some(counters) = ai.counters_mut() {
-        counters.update_sunray(std::time::Instant::now());
+        counters.update_sunray();
     }
 
     Some(PlanetToOrchestrator::SunrayAck {

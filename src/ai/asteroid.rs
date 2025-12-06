@@ -10,7 +10,7 @@ pub fn handle_asteroid(
     _combinator: &Combinator,
 ) -> Option<Rocket> {
     if let Some(counters) = ai.counters_mut() {
-        counters.update_asteroid(std::time::Instant::now());
+        counters.update_asteroid();
     }
     if state.has_rocket() {
         state.take_rocket()

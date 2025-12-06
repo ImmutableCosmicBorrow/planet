@@ -1,4 +1,5 @@
 mod asteroid;
+mod decide;
 mod explorer;
 mod orchestrator;
 

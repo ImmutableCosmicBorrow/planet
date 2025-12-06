@@ -32,7 +32,7 @@ fn handle_sunray(
     state: &mut PlanetState,
     sunray: Sunray,
 ) -> Option<PlanetToOrchestrator> {
-    if state.cell(0).is_charged() && state.has_rocket() {
+    if state.cell(0).is_charged() && !state.has_rocket() {
         let _ = state.build_rocket(0);
     }
 

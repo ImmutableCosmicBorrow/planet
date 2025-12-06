@@ -9,7 +9,9 @@ pub fn handle_asteroid(
     _generator: &Generator,
     _combinator: &Combinator,
 ) -> Option<Rocket> {
-    ai.counters_mut().update_asteroid_rate();
+    if let Some(counters) = ai.counters_mut() {
+        counters.update_asteroid(std::time::Instant::now());
+    }
     if state.has_rocket() {
         state.take_rocket()
     } else if state.cell(0).is_charged() {

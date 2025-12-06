@@ -38,7 +38,9 @@ fn handle_sunray(
 
     state.cell_mut(0).charge(sunray);
 
-    ai.counters_mut().update_sunray_rate();
+    if let Some(counters) = ai.counters_mut() {
+        counters.update_sunray(std::time::Instant::now());
+    }
 
     Some(PlanetToOrchestrator::SunrayAck {
         planet_id: state.id(),

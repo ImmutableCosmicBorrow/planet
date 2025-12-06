@@ -18,7 +18,7 @@ pub struct Ai {
     pub(crate) rocket_gen_coeff: f32,
     pub(crate) basic_gen_coeff: f32,
     pub(crate) complex_gen_coeff: f32,
-    counters: FrequencyCounter,
+    counters: Option<FrequencyCounter>,
 }
 
 impl PlanetAI for Ai {
@@ -65,10 +65,12 @@ impl PlanetAI for Ai {
 
     fn start(&mut self, _state: &PlanetState) {
         self.is_ai_active = true;
+        self.counters = Some(FrequencyCounter::new());
     }
 
     fn stop(&mut self, _state: &PlanetState) {
         self.is_ai_active = false;
+        self.counters = None;
     }
 }
 
@@ -90,11 +92,11 @@ impl Ai {
             basic_gen_coeff: checked_basic_gen_coeff,
             complex_gen_coeff: checked_complex_gen_coeff,
             rocket_gen_coeff: checked_rocket_gen_coeff,
-            counters: FrequencyCounter::new(),
+            counters: Some(FrequencyCounter::new()),
         }
     }
 
-    pub(crate) fn counters_mut(&mut self) -> &mut FrequencyCounter {
+    pub(crate) fn counters_mut(&mut self) -> &mut Option<FrequencyCounter> {
         &mut self.counters
     }
 

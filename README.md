@@ -14,3 +14,10 @@ A core feature of our project is the implementation of an intelligent power regu
 The user can choose between two operating modes:
 - **Random Mode**: EnergyCell consumption is determined stochastically
 - **Adaptive Mode**: EnergyCell usage dynamically adjusts based on incoming messages. The algorithm prioritizes recent signals, ensuring robust planetary defense during attacks and maximizing resource prosperity when the threat level is low.
+
+Both modes support customization of the following parameters:
+- `rocket_gen_coeff`: Coefficient for rocket generation
+- `basic_gen_coeff`: Coefficient for basic resource generation
+- `complex_gen_coeff`: Coefficient for complex resource generation
+
+For more details on configuration and usage, please refer to the [documentation](https://github.com/ImmutableCosmicBorrow/planet/wiki) within the source code.

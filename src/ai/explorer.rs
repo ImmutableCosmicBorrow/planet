@@ -90,7 +90,7 @@ fn combine_resource(
     msg: ComplexResourceRequest,
 ) -> Option<PlanetToExplorer> {
     if !generate_complex_resource(ai) {
-        None
+        return None;
     }
 
     let complex_response = match msg {

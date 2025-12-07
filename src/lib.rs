@@ -3,7 +3,7 @@ use common_game::components::resource::{BasicResourceType, ComplexResourceType};
 use common_game::protocols::messages::{
     ExplorerToPlanet, OrchestratorToPlanet, PlanetToOrchestrator,
 };
-use std::sync::mpsc;
+use crossbeam_channel::{Receiver, Sender};
 
 mod ai;
 mod frequency_counter;
@@ -26,11 +26,8 @@ pub fn create_planet(
     planet_ai: Ai,
     gen_rules: Vec<BasicResourceType>,
     comb_rules: Vec<ComplexResourceType>,
-    orchestrator_channels: (
-        mpsc::Receiver<OrchestratorToPlanet>,
-        mpsc::Sender<PlanetToOrchestrator>,
-    ),
-    explorers_receiver: mpsc::Receiver<ExplorerToPlanet>,
+    orchestrator_channels: (Receiver<OrchestratorToPlanet>, Sender<PlanetToOrchestrator>),
+    explorers_receiver: Receiver<ExplorerToPlanet>,
 ) -> Result<planet::Planet, String> {
     planet::Planet::new(
         0,

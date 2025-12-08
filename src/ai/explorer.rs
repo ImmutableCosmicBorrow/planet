@@ -84,7 +84,7 @@ fn generate_resource(
 
 /// Returns the optional complex resource created
 fn combine_resource(
-    ai: &Ai,
+    ai: &mut Ai,
     state: &mut PlanetState,
     combinator: &Combinator,
     msg: ComplexResourceRequest,

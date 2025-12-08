@@ -3,7 +3,7 @@ use super::decide::{generate_basic_resource, generate_complex_resource};
 use common_game::components::planet::PlanetState;
 use common_game::components::resource::{
     BasicResource, BasicResourceType, Combinator, ComplexResource, ComplexResourceRequest,
-    Generator
+    Generator,
 };
 use common_game::protocols::messages::{ExplorerToPlanet, PlanetToExplorer};
 

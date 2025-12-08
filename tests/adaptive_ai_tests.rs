@@ -2,39 +2,37 @@ mod common;
 
 use std::thread;
 use std::time::Duration;
-use common_game::components::asteroid::Asteroid;
+use common_game::components::forge::Forge;
 use common_game::components::resource::{BasicResourceType, ComplexResourceType};
-use common_game::components::sunray::Sunray;
 use common_game::protocols::messages::{ExplorerToPlanet, OrchestratorToPlanet, PlanetToExplorer, PlanetToOrchestrator};
 use common::*;
 use planet::{create_planet, Ai};
 
 
 const ROCKET_COEFFICIENT : f32 = 0.4;
-const BASIC_GEN_COEFFICIENT : f32 = 0.8;
-const COMPLEX_GEN_COEFFICIENT : f32 = 0.8;
+const BASIC_GEN_COEFFICIENT : f32 = 0.9;
+const COMPLEX_GEN_COEFFICIENT : f32 = 0.9;
 const SUNRAY_PROBABILITY : f32 = 0.8;
-const EXPLORER_REQUEST_PROBABILITY : f32 = 0.2;
+const EXPLORER_REQUEST_PROBABILITY : f32 = 0.4;
 
 
 
 
 
 
-// Run "cargo test --package planet --test adaptive_ai_tests test_adaptive_ai -- --exact --nocapture"
-// to see prints
 #[test]
 fn test_adaptive_ai(){
     // Variables for statistics
     let mut accepted_explorer_requests = 0;
     let mut refused_explorer_requests = 0;
+    let mut dont_have_energycell = 0;
     let mut asteroids_avoided = 0;
     let mut sunrays_received = 0;
     let mut iterations = 0;
 
     let mut sunray_probability_modifier = 0.0;
 
-    let mut last_was_asteroid = false;
+    let forge = Forge::new().unwrap();
 
     // Creating the Planet
 
@@ -79,23 +77,20 @@ fn test_adaptive_ai(){
         iterations += 1;
 
         // a. Orchestrator sends a Sunray with probability SUNRAY_PROBABILITY - modifier, otherwise sends Asteroid
-        // if last was asteroid is true, sends a sunray to avoid sending 2 consecutive asteroids
-        if last_was_asteroid || rand::random::<f32>() <= SUNRAY_PROBABILITY - sunray_probability_modifier {
+        if rand::random::<f32>() <= SUNRAY_PROBABILITY - sunray_probability_modifier {
             print!("S");
-            let _ = orchestrator_send(&tx_orchestrator, &rx_orchestrator, OrchestratorToPlanet::Sunray(Sunray::default()));
+            let _ = orchestrator_send(&tx_orchestrator, &rx_orchestrator, OrchestratorToPlanet::Sunray(forge.generate_sunray()));
             sunrays_received += 1;
-            last_was_asteroid = false;
         } else {
             print!("A");
-            let response = orchestrator_send(&tx_orchestrator, &rx_orchestrator, OrchestratorToPlanet::Asteroid(Asteroid::default()));
+            let response = orchestrator_send(&tx_orchestrator, &rx_orchestrator, OrchestratorToPlanet::Asteroid(forge.generate_asteroid()));
             match response {
                 PlanetToOrchestrator::AsteroidAck {rocket : None, .. } => break,
 
-                PlanetToOrchestrator::AsteroidAck {rocket : Some(rocket), .. } => asteroids_avoided += 1,
+                PlanetToOrchestrator::AsteroidAck {rocket : Some(_), .. } => asteroids_avoided += 1,
 
                 _ => panic!("Expected AsteroidAck but received different response")
             }
-            last_was_asteroid = true;
         }
 
         // b. Explorer asks Planet to create Carbon with probability EXPLORER_REQUEST_PROBABILITY, otherwise does nothing
@@ -108,7 +103,7 @@ fn test_adaptive_ai(){
             thread::sleep(Duration::from_millis(50));
 
             let response = rx_explorer
-                .recv_timeout(Duration::from_millis(2000));
+                .recv_timeout(Duration::from_millis(200));
 
 
             //let response = explorer_send(&tx_explorer, &rx_explorer, ExplorerToPlanet::GenerateResourceRequest {explorer_id : 0, resource : BasicResourceType::Carbon});
@@ -118,7 +113,10 @@ fn test_adaptive_ai(){
             match response {
                 Ok(PlanetToExplorer::GenerateResourceResponse { resource : None }) => refused_explorer_requests += 1,
                 Ok(PlanetToExplorer::GenerateResourceResponse { resource : Some(_) }) => accepted_explorer_requests += 1,
-                Err(_) => refused_explorer_requests += 1,
+                Err(_) => {
+                    refused_explorer_requests += 1;
+                    dont_have_energycell += 1;
+                },
                 _ => panic!("Expected GenerateResourceResponse but received different response")
             }
         }
@@ -130,12 +128,13 @@ fn test_adaptive_ai(){
     println!("Iterations : {}", iterations);
     println!("Accepted explorer's requests: {} - {}%", accepted_explorer_requests, ((accepted_explorer_requests as f32 / (refused_explorer_requests as f32 + accepted_explorer_requests as f32))*100.0) as u32);
     println!("Refused explorer's requests: {} - {}%", refused_explorer_requests, ((refused_explorer_requests as f32 / (refused_explorer_requests as f32 + accepted_explorer_requests as f32))*100.0) as u32);
+    println!("Did not have EnergyCell: {} - {}% of refused", dont_have_energycell, (( dont_have_energycell as f32 / refused_explorer_requests as f32) * 100.0) as u32);
     println!("Asteroids avoided: {}", asteroids_avoided);
     println!("Sunrays received: {} - {}% of Sunrays + Asteroids", sunrays_received, ((sunrays_received as f32 / (sunrays_received as f32 + asteroids_avoided as f32 + 1.0))*100.0) as u32);
     println!("Final Sunray probability: {}%", ((SUNRAY_PROBABILITY - sunray_probability_modifier) * 100.0) as u32);
 
-    // 5. Orchestrator stops the Planet
-    orchestrator_stop_planet(&tx_orchestrator, &rx_orchestrator);
+    // 5. Orchestrator kills the Planet
+    orchestrator_kill_planet(&tx_orchestrator, &rx_orchestrator);
 
     // 6. Stop thread
     drop(tx_orchestrator);

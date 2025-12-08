@@ -45,6 +45,11 @@ pub fn orchestrator_start_planet(tx_orchestrator: &crossbeam_channel::Sender<Orc
         .recv_timeout(Duration::from_millis(200))
         .expect("Orchestrator failed to receive");
 }
+pub fn orchestrator_kill_planet(tx_orchestrator: &crossbeam_channel::Sender<OrchestratorToPlanet>, rx_orchestrator: &crossbeam_channel::Receiver<PlanetToOrchestrator>) {
+    let _ = orchestrator_send(&tx_orchestrator, &rx_orchestrator, OrchestratorToPlanet::KillPlanet);
+    thread::sleep(Duration::from_millis(200));
+}
+
 pub fn orchestrator_stop_planet(tx_orchestrator: &crossbeam_channel::Sender<OrchestratorToPlanet>, rx_orchestrator: &crossbeam_channel::Receiver<PlanetToOrchestrator>) {
     tx_orchestrator
         .send(OrchestratorToPlanet::StopPlanetAI)
@@ -53,6 +58,8 @@ pub fn orchestrator_stop_planet(tx_orchestrator: &crossbeam_channel::Sender<Orch
     rx_orchestrator
         .recv_timeout(Duration::from_millis(200))
         .expect("Orchestrator failed to receive");
+
+    orchestrator_send(&tx_orchestrator, &rx_orchestrator, OrchestratorToPlanet::KillPlanet);
 }
 pub fn orchestrator_send(tx : &crossbeam_channel::Sender<OrchestratorToPlanet>, rx : &crossbeam_channel::Receiver<PlanetToOrchestrator>, msg : OrchestratorToPlanet) -> PlanetToOrchestrator {
     tx
@@ -74,11 +81,8 @@ pub fn explorer_send(tx : &crossbeam_channel::Sender<ExplorerToPlanet>, rx : &cr
         .recv_timeout(Duration::from_millis(2000))
         .expect("Explorer failed to receive")
 }
-pub fn start_thread(mut planet : Planet) -> JoinHandle<()> {
+pub fn start_thread(mut planet : Planet) -> JoinHandle<Result<(), String>> {
     thread::spawn(move || {
-        match planet.run() {
-            Ok(_) => (),
-            Err(error) => panic!("Planet run returned error: {}", error),
-        }
+        planet.run()
     })
 }

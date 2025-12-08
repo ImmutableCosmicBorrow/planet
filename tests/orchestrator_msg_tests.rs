@@ -28,8 +28,8 @@ fn test_sunray_response(){
         _ => panic!{"Expected a SunrayAck response but received a different one"},
     }
 
-    // 5. Orchestrator stops planet
-    orchestrator_stop_planet(&tx_orchestrator, &rx_orchestrator);
+    // 5. Orchestrator kills planet
+    orchestrator_kill_planet(&tx_orchestrator, &rx_orchestrator);
 
     // 6. End thread
     drop(tx_orchestrator);
@@ -60,8 +60,8 @@ fn test_asteroid_response(){
         _ => panic!{"Expected a AsteroidAck but received a different one"},
     }
 
-    // 6. Orchestrator stops planet
-    orchestrator_stop_planet(&tx_orchestrator, &rx_orchestrator);
+    // 6. Orchestrator kills planet
+    orchestrator_kill_planet(&tx_orchestrator, &rx_orchestrator);
 
     // 7. End thread
     drop(tx_orchestrator);
@@ -96,8 +96,8 @@ fn test_start_stop_response(){
         _ => panic!("Expected a StopPlanetAIResult but received a different one")
     }
 
-    // 6. Orchestrator stops planet
-    orchestrator_stop_planet(&tx_orchestrator, &rx_orchestrator);
+    // 6. Orchestrator kills planet
+    orchestrator_kill_planet(&tx_orchestrator, &rx_orchestrator);
 
     // 7. End thread
     drop(tx_orchestrator);
@@ -126,8 +126,8 @@ fn test_internal_state_response(){
     }
 
 
-    // 5. Orchestrator stops planet
-    orchestrator_stop_planet(&tx_orchestrator, &rx_orchestrator);
+    // 5. Orchestrator kills planet
+    orchestrator_kill_planet(&tx_orchestrator, &rx_orchestrator);
 
     // 6. End thread
     drop(tx_orchestrator);

@@ -37,8 +37,8 @@ fn test_supported_resource_response(){
         _ => panic!{"Expected a combination response but received a different one"},
     }
 
-    // 6. Orchestrator stops planet
-    orchestrator_stop_planet(&tx_orchestrator, &rx_orchestrator);
+    // 6. Orchestrator kills planet
+    orchestrator_kill_planet(&tx_orchestrator, &rx_orchestrator);
 
 
     drop(tx_orchestrator);
@@ -76,8 +76,8 @@ fn test_supported_combination_response() {
         _ => panic!{"Expected a combination response but received a different one"},
     }
 
-    // 6. Orchestrator stops planet
-    orchestrator_stop_planet(&tx_orchestrator, &rx_orchestrator);
+    // 6. Orchestrator kills planet
+    orchestrator_kill_planet(&tx_orchestrator, &rx_orchestrator);
 
 
     drop(tx_orchestrator);
@@ -191,8 +191,8 @@ fn test_combine_resource_response(){
         _ => panic!("Expected a diamond but did not receive it"),
     }
 
-    // 11. Orchestrator stops Planet
-    orchestrator_stop_planet(&tx_orchestrator, &rx_orchestrator);
+    // 11. Orchestrator kills Planet
+    orchestrator_kill_planet(&tx_orchestrator, &rx_orchestrator);
 
     // 12. End thread
     drop(tx_orchestrator);
@@ -245,8 +245,8 @@ fn test_available_cell_response(){
         _ => panic!{"Expected an AvailableEnergyCellResponse but received a different one"},
     }
 
-    // 9. Orchestrator stops planet
-    orchestrator_stop_planet(&tx_orchestrator, &rx_orchestrator);
+    // 9. Orchestrator kills planet
+    orchestrator_kill_planet(&tx_orchestrator, &rx_orchestrator);
 
     // 10. End thread
     drop(tx_orchestrator);

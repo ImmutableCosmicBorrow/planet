@@ -1,5 +1,7 @@
 mod common;
 
+use std::thread;
+use std::time::Duration;
 use common_game::components::asteroid::Asteroid;
 use common_game::components::resource::{BasicResourceType, ComplexResourceType};
 use common_game::components::sunray::Sunray;
@@ -19,10 +21,9 @@ const EXPLORER_REQUEST_PROBABILITY : f32 = 0.2;
 
 
 
-// Ignored because now my dummy explorer always expects a response, but if ai decides to not fulfil the request, planet will not respond and test will fail
-// will remove the ignore when we decide what to do with that None
+// Run "cargo test --package planet --test adaptive_ai_tests test_adaptive_ai -- --exact --nocapture"
+// to see prints
 #[test]
-#[ignore]
 fn test_adaptive_ai(){
     // Variables for statistics
     let mut accepted_explorer_requests = 0;
@@ -33,6 +34,7 @@ fn test_adaptive_ai(){
 
     let mut sunray_probability_modifier = 0.0;
 
+    let mut last_was_asteroid = false;
 
     // Creating the Planet
 
@@ -76,11 +78,13 @@ fn test_adaptive_ai(){
     loop {
         iterations += 1;
 
-        // a. Orchestrator sends a Sunray with probability SUNRAY_PROBABILITY + modifier, otherwise sends Asteroid
-        if rand::random::<f32>() <= SUNRAY_PROBABILITY + sunray_probability_modifier {
+        // a. Orchestrator sends a Sunray with probability SUNRAY_PROBABILITY - modifier, otherwise sends Asteroid
+        // if last was asteroid is true, sends a sunray to avoid sending 2 consecutive asteroids
+        if last_was_asteroid || rand::random::<f32>() <= SUNRAY_PROBABILITY - sunray_probability_modifier {
             print!("S");
             let _ = orchestrator_send(&tx_orchestrator, &rx_orchestrator, OrchestratorToPlanet::Sunray(Sunray::default()));
             sunrays_received += 1;
+            last_was_asteroid = false;
         } else {
             print!("A");
             let response = orchestrator_send(&tx_orchestrator, &rx_orchestrator, OrchestratorToPlanet::Asteroid(Asteroid::default()));
@@ -91,17 +95,35 @@ fn test_adaptive_ai(){
 
                 _ => panic!("Expected AsteroidAck but received different response")
             }
+            last_was_asteroid = true;
         }
 
         // b. Explorer asks Planet to create Carbon with probability EXPLORER_REQUEST_PROBABILITY, otherwise does nothing
         if rand::random::<f32>() <= EXPLORER_REQUEST_PROBABILITY {
-            let response = explorer_send(&tx_explorer, &rx_explorer, ExplorerToPlanet::GenerateResourceRequest {explorer_id : 0, resource : BasicResourceType::Carbon});
+            let msg = ExplorerToPlanet::GenerateResourceRequest {explorer_id : 0, resource : BasicResourceType::Carbon};
+
+            tx_explorer
+                .send(msg)
+                .expect("Explorer failed to send");
+            thread::sleep(Duration::from_millis(50));
+
+            let response = rx_explorer
+                .recv_timeout(Duration::from_millis(2000));
+
+
+            //let response = explorer_send(&tx_explorer, &rx_explorer, ExplorerToPlanet::GenerateResourceRequest {explorer_id : 0, resource : BasicResourceType::Carbon});
+
+            // TODO: now it is allowed for the response to be an Err, since if ai decides not to fulfil the request it returns None
+            // might need to modify this if that return is changed
             match response {
-                PlanetToExplorer::GenerateResourceResponse { resource : None } => refused_explorer_requests += 1,
-                PlanetToExplorer::GenerateResourceResponse { resource : Some(_) } => accepted_explorer_requests += 1,
+                Ok(PlanetToExplorer::GenerateResourceResponse { resource : None }) => refused_explorer_requests += 1,
+                Ok(PlanetToExplorer::GenerateResourceResponse { resource : Some(_) }) => accepted_explorer_requests += 1,
+                Err(_) => refused_explorer_requests += 1,
                 _ => panic!("Expected GenerateResourceResponse but received different response")
             }
         }
+        // c. Increase sunray probability modifier to avoid endless loop
+        sunray_probability_modifier += 0.001;
     }
 
     println!("\nPlanet is destroyed, concluding test.");
@@ -110,6 +132,7 @@ fn test_adaptive_ai(){
     println!("Refused explorer's requests: {} - {}%", refused_explorer_requests, ((refused_explorer_requests as f32 / (refused_explorer_requests as f32 + accepted_explorer_requests as f32))*100.0) as u32);
     println!("Asteroids avoided: {}", asteroids_avoided);
     println!("Sunrays received: {} - {}% of Sunrays + Asteroids", sunrays_received, ((sunrays_received as f32 / (sunrays_received as f32 + asteroids_avoided as f32 + 1.0))*100.0) as u32);
+    println!("Final Sunray probability: {}%", ((SUNRAY_PROBABILITY - sunray_probability_modifier) * 100.0) as u32);
 
     // 5. Orchestrator stops the Planet
     orchestrator_stop_planet(&tx_orchestrator, &rx_orchestrator);

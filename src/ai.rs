@@ -12,11 +12,9 @@ use common_game::protocols::messages::{
     ExplorerToPlanet, OrchestratorToPlanet, PlanetToExplorer, PlanetToOrchestrator,
 };
 
-//TODO: ADD RANDOM GENERATION LOGIC
 pub struct Ai {
     is_ai_active: bool,
     random_mode: bool,
-    pub(crate) rocket_gen_coeff: f32,
     pub(crate) basic_gen_coeff: f32,
     pub(crate) complex_gen_coeff: f32,
     counters: Option<FrequencyCounter>,
@@ -76,23 +74,16 @@ impl PlanetAI for Ai {
 }
 
 impl Ai {
-    pub fn new(
-        random_mode: bool,
-        rocket_gen_coeff: f32,
-        basic_gen_coeff: f32,
-        complex_gen_coeff: f32,
-    ) -> Self {
+    pub fn new(random_mode: bool, basic_gen_coeff: f32, complex_gen_coeff: f32) -> Self {
         //check that coefficients are in bounds and eventually correct them
         let checked_basic_gen_coeff = basic_gen_coeff.clamp(0.0, 1.0);
         let checked_complex_gen_coeff = complex_gen_coeff.clamp(0.0, 1.0);
-        let checked_rocket_gen_coeff = rocket_gen_coeff.clamp(0.0, 1.0);
 
         Ai {
             is_ai_active: false,
             random_mode,
             basic_gen_coeff: checked_basic_gen_coeff,
             complex_gen_coeff: checked_complex_gen_coeff,
-            rocket_gen_coeff: checked_rocket_gen_coeff,
             counters: Some(FrequencyCounter::new()),
         }
     }
@@ -106,10 +97,6 @@ impl Ai {
     }
 
     // Public getters for testing
-
-    pub fn rocket_gen_coeff(&self) -> f32 {
-        self.rocket_gen_coeff
-    }
 
     pub fn basic_gen_coeff(&self) -> f32 {
         self.basic_gen_coeff

@@ -8,7 +8,7 @@ use planet::{Ai, create_planet};
 #[test]
 fn test_planet_creation() {
     // Create an AI with all coefficients set to 0 (no random generation)
-    let planet_ai = Ai::new(false, 0.0, 0.0, 0.0);
+    let planet_ai = Ai::new(false, 0.0, 0.0);
 
     let (_tx_orch_in, rx_orch_in) = unbounded::<OrchestratorToPlanet>();
     // Channel 2: Planet -> Orchestrator

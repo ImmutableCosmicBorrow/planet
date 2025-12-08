@@ -76,8 +76,9 @@ pub fn explorer_send(tx : &crossbeam_channel::Sender<ExplorerToPlanet>, rx : &cr
 }
 pub fn start_thread(mut planet : Planet) -> JoinHandle<()> {
     thread::spawn(move || {
-        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            let _ = planet.run();
-        }));
+        match planet.run() {
+            Ok(_) => (),
+            Err(error) => panic!("Planet run returned error: {}", error),
+        }
     })
 }

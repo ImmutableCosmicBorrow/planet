@@ -1,6 +1,6 @@
 use common_game::components::resource::{BasicResourceType, ComplexResourceType};
 use common_game::protocols::messages::{
-    ExplorerToPlanet, OrchestratorToPlanet, PlanetToExplorer, PlanetToOrchestrator,
+    ExplorerToPlanet, OrchestratorToPlanet, PlanetToOrchestrator,
 };
 use crossbeam_channel::unbounded;
 use planet::{Ai, create_planet};

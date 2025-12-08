@@ -66,7 +66,7 @@ impl PlanetAI for Ai {
 
     fn start(&mut self, _state: &PlanetState) {
         self.is_ai_active = true;
-        self.counters = Some(FrequencyCounter::new(0.5));
+        self.counters = Some(FrequencyCounter::new(0.1));
     }
 
     fn stop(&mut self, _state: &PlanetState) {

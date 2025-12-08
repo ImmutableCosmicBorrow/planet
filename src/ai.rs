@@ -64,7 +64,7 @@ impl PlanetAI for Ai {
 
     fn start(&mut self, _state: &PlanetState) {
         self.is_ai_active = true;
-        self.counters = Some(FrequencyCounter::new());
+        self.counters = Some(FrequencyCounter::new(0.5));
     }
 
     fn stop(&mut self, _state: &PlanetState) {
@@ -84,7 +84,7 @@ impl Ai {
             random_mode,
             basic_gen_coeff: checked_basic_gen_coeff,
             complex_gen_coeff: checked_complex_gen_coeff,
-            counters: Some(FrequencyCounter::new()),
+            counters: Some(FrequencyCounter::new(0.5)),
         }
     }
 

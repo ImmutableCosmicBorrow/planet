@@ -20,3 +20,5 @@ Both modes support customization of the following parameters:
 - `complex_gen_coeff`: Coefficient for complex resource generation
 
 For more details on configuration and usage, please refer to the [documentation](https://github.com/ImmutableCosmicBorrow/planet/wiki) within the source code.
+
+If you need to report a bug, ask for clarifications or suggest a new feature, open a ticket on our [Discord server](https://discord.gg/Cnus4KHg). We encourage you to log in anyway to receive every important update! 

@@ -56,7 +56,7 @@ fn generate_resource(
     generator: &Generator,
     to_generate: BasicResourceType,
 ) -> Option<PlanetToExplorer> {
-    if !generate_basic_resource(ai) {
+    if !generate_basic_resource(ai, state) {
         return Some(PlanetToExplorer::GenerateResourceResponse { resource: None });
     }
 
@@ -89,7 +89,7 @@ fn combine_resource(
     combinator: &Combinator,
     msg: ComplexResourceRequest,
 ) -> Option<PlanetToExplorer> {
-    if !generate_complex_resource(ai) {
+    if !generate_complex_resource(ai, state) {
         let response = match msg {
             ComplexResourceRequest::Water(r1, r2) => Err((
                 "Keeping the energy cell".to_string(),

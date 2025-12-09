@@ -31,7 +31,7 @@ pub fn create_planet(
         0,
         PlanetType::C,
         Box::new(planet_ai),
-        vec![BasicResourceType::Carbon],
+        vec![BasicResourceType::Hydrogen],
         vec![
             ComplexResourceType::AIPartner,
             ComplexResourceType::Diamond,

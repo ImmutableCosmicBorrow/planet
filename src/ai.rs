@@ -18,6 +18,7 @@ pub struct Ai {
     random_mode: bool,
     pub(crate) basic_gen_coeff: f32,
     pub(crate) complex_gen_coeff: f32,
+    half_life: Duration,
     min_time_constant: Duration,
     counters: Option<FrequencyCounter>,
 }
@@ -66,7 +67,10 @@ impl PlanetAI for Ai {
 
     fn start(&mut self, _state: &PlanetState) {
         self.is_ai_active = true;
-        self.counters = Some(FrequencyCounter::new(0.5, self.min_time_constant));
+        self.counters = Some(FrequencyCounter::new(
+            self.half_life,
+            self.min_time_constant,
+        ));
     }
 
     fn stop(&mut self, _state: &PlanetState) {
@@ -80,6 +84,7 @@ impl Ai {
         random_mode: bool,
         basic_gen_coeff: f32,
         complex_gen_coeff: f32,
+        half_life: Duration,
         min_time_constant: Duration,
     ) -> Self {
         //check that coefficients are in bounds and eventually correct them
@@ -91,8 +96,9 @@ impl Ai {
             random_mode,
             basic_gen_coeff: checked_basic_gen_coeff,
             complex_gen_coeff: checked_complex_gen_coeff,
+            half_life,
             min_time_constant,
-            counters: Some(FrequencyCounter::new(0.5, min_time_constant)),
+            counters: Some(FrequencyCounter::new(half_life, min_time_constant)),
         }
     }
 

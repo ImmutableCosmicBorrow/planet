@@ -36,6 +36,7 @@ fn test_adaptive_ai() {
         BASIC_GEN_COEFFICIENT,
         COMPLEX_GEN_COEFFICIENT,
         Duration::from_secs(1),
+        Duration::from_millis(100),
     );
     // Channel 1: Orchestrator -> Planet
     let (tx_orchestrator, rx_orchestrator_to_planet) =

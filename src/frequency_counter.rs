@@ -1,9 +1,8 @@
-use std::f32::consts::LN_2;
 use std::time::{Duration, Instant};
 
 pub struct FrequencyCounter {
-    // tau
-    tau: f32,
+    // Half-life for exponential decay
+    half_life: Duration,
     impulse: f32,
 
     // Competing intensities
@@ -21,12 +20,12 @@ pub struct FrequencyCounter {
 }
 
 impl FrequencyCounter {
-    pub fn new(half_life: f32, min_time_constant: Duration) -> Self {
-        let tau = half_life / LN_2;
+    pub fn new(half_life: Duration, min_time_constant: Duration) -> Self {
+        let tau = half_life.as_secs_f32() / std::f32::consts::LN_2;
         let impulse = 1.0 / tau;
 
         Self {
-            tau,
+            half_life,
             impulse,
             sun_intensity: 0.5,
             asteroid_intensity: 0.5,
@@ -69,7 +68,8 @@ impl FrequencyCounter {
             }
 
             let dt = elapsed.as_secs_f32();
-            let decay_factor = (-dt / self.tau).exp();
+            let tau = self.half_life.as_secs_f32() / std::f32::consts::LN_2;
+            let decay_factor = (-dt / tau).exp();
 
             self.sun_intensity *= decay_factor;
             self.asteroid_intensity *= decay_factor;
@@ -95,7 +95,7 @@ impl FrequencyCounter {
     }
 
     pub fn current_tau(&self) -> f32 {
-        self.tau
+        self.half_life.as_secs_f32() / std::f32::consts::LN_2
     }
 
     pub fn debug_stats(&self) -> (f32, f32) {

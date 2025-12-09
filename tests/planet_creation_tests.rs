@@ -25,13 +25,7 @@ fn test_planet_creation() {
     let (_tx_expl_in, rx_expl_in) = unbounded::<ExplorerToPlanet>();
 
     // Create a planet with basic resource (Oxygen) and complex resource (Water) generation capabilities
-    let planet = create_planet(
-        planet_ai,
-        vec![BasicResourceType::Oxygen],
-        vec![ComplexResourceType::Water],
-        (rx_orch_in, tx_orch_out),
-        rx_expl_in,
-    );
+    let planet = create_planet(planet_ai, (rx_orch_in, tx_orch_out), rx_expl_in);
 
     assert!(
         planet.is_ok(),

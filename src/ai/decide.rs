@@ -13,7 +13,7 @@ pub fn generate_basic_resource(ai: &mut Ai, state: &PlanetState) -> bool {
         // Use sunray probability to decide: help if asteroid risk is low enough
         let p_sunray = counters.sunray_probability();
         let p_asteroid = 1.0 - p_sunray;
-        
+
         // If we have a rocket, evaluate risk of 2 asteroids before next sunray
         if state.has_rocket() {
             let p_squared = p_asteroid * p_asteroid;
@@ -39,7 +39,7 @@ pub fn generate_complex_resource(ai: &mut Ai, state: &PlanetState) -> bool {
         // Use sunray probability to decide: help if asteroid risk is low enough
         let p_sunray = counters.sunray_probability();
         let p_asteroid = 1.0 - p_sunray;
-        
+
         // If we have a rocket, evaluate risk of 2 asteroids before next sunray
         if state.has_rocket() {
             let p_squared = p_asteroid * p_asteroid;

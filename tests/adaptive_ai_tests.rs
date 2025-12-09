@@ -53,15 +53,6 @@ fn test_adaptive_ai() {
 
     let planet = create_planet(
         planet_ai,
-        vec![BasicResourceType::Carbon],
-        vec![
-            ComplexResourceType::AIPartner,
-            ComplexResourceType::Diamond,
-            ComplexResourceType::Dolphin,
-            ComplexResourceType::Life,
-            ComplexResourceType::Robot,
-            ComplexResourceType::Water,
-        ],
         (rx_orchestrator_to_planet, tx_planet_to_orchestrator),
         rx_explorer_to_planet,
     )

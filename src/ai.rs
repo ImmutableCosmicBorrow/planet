@@ -11,12 +11,14 @@ use common_game::components::rocket::Rocket;
 use common_game::protocols::messages::{
     ExplorerToPlanet, OrchestratorToPlanet, PlanetToExplorer, PlanetToOrchestrator,
 };
+use std::time::Duration;
 
 pub struct Ai {
     is_ai_active: bool,
     random_mode: bool,
     pub(crate) basic_gen_coeff: f32,
     pub(crate) complex_gen_coeff: f32,
+    min_time_constant: Duration,
     counters: Option<FrequencyCounter>,
 }
 
@@ -64,7 +66,7 @@ impl PlanetAI for Ai {
 
     fn start(&mut self, _state: &PlanetState) {
         self.is_ai_active = true;
-        self.counters = Some(FrequencyCounter::new(0.5));
+        self.counters = Some(FrequencyCounter::new(0.5, self.min_time_constant));
     }
 
     fn stop(&mut self, _state: &PlanetState) {
@@ -74,7 +76,12 @@ impl PlanetAI for Ai {
 }
 
 impl Ai {
-    pub fn new(random_mode: bool, basic_gen_coeff: f32, complex_gen_coeff: f32) -> Self {
+    pub fn new(
+        random_mode: bool,
+        basic_gen_coeff: f32,
+        complex_gen_coeff: f32,
+        min_time_constant: Duration,
+    ) -> Self {
         //check that coefficients are in bounds and eventually correct them
         let checked_basic_gen_coeff = basic_gen_coeff.clamp(0.0, 1.0);
         let checked_complex_gen_coeff = complex_gen_coeff.clamp(0.0, 1.0);
@@ -84,7 +91,8 @@ impl Ai {
             random_mode,
             basic_gen_coeff: checked_basic_gen_coeff,
             complex_gen_coeff: checked_complex_gen_coeff,
-            counters: Some(FrequencyCounter::new(0.5)),
+            min_time_constant,
+            counters: Some(FrequencyCounter::new(0.5, min_time_constant)),
         }
     }
 
@@ -97,7 +105,6 @@ impl Ai {
     }
 
     // Public getters for testing
-
     pub fn basic_gen_coeff(&self) -> f32 {
         self.basic_gen_coeff
     }

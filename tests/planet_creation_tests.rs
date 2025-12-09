@@ -4,11 +4,12 @@ use common_game::protocols::messages::{
 };
 use crossbeam_channel::unbounded;
 use planet::{Ai, create_planet};
+use std::time::Duration;
 /// Test that a planet can be successfully created using the create_planet function
 #[test]
 fn test_planet_creation() {
     // Create an AI with all coefficients set to 0 (no random generation)
-    let planet_ai = Ai::new(false, 0.0, 0.0);
+    let planet_ai = Ai::new(false, 0.0, 0.0, Duration::from_secs(1));
 
     let (_tx_orch_in, rx_orch_in) = unbounded::<OrchestratorToPlanet>();
     // Channel 2: Planet -> Orchestrator

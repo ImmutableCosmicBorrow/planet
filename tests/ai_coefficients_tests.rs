@@ -1,15 +1,15 @@
 use planet::Ai;
+use std::time::Duration;
 
 /// Test that AI coefficients within the valid range [0.0, 1.0] are preserved
 #[test]
 fn planet_ai_valid_coefficient_creation() {
     // Test coefficients at boundaries
-    let planet_ai_min = Ai::new(true, 0.0, 0.0);
-    let planet_ai_max = Ai::new(false, 1.0, 1.0);
+    let planet_ai_min = Ai::new(true, 0.0, 0.0, Duration::from_secs(1));
+    let planet_ai_max = Ai::new(false, 1.0, 1.0, Duration::from_secs(1));
 
     // Test coefficients in the middle of the range
-    let planet_ai_mid = Ai::new(true, 0.5, 0.7);
-
+    let planet_ai_mid = Ai::new(true, 0.5, 0.7, Duration::from_secs(1));
     // Verify that valid coefficients are preserved exactly
     assert_eq!(
         planet_ai_min.basic_gen_coeff(),
@@ -36,10 +36,12 @@ fn planet_ai_valid_coefficient_creation() {
     assert_eq!(
         planet_ai_mid.basic_gen_coeff(),
         0.5,
+        0.5,
         "Basic resource coefficient in range should be preserved"
     );
     assert_eq!(
         planet_ai_mid.complex_gen_coeff(),
+        0.7,
         0.7,
         "Complex resource coefficient in range should be preserved"
     );
@@ -50,16 +52,16 @@ fn planet_ai_valid_coefficient_creation() {
 fn planet_ai_wrong_coefficient_creation() {
     // Test coefficients outside valid range (should be clamped)
     let test_cases = [
-        ((0.0, 7.0), (0.0, 1.0)),
-        ((0.0, 5.7), (0.0, 1.0)),
-        ((-0.6, 0.0), (0.0, 0.0)),
-        ((3.5, 0.0), (1.0, 0.0)),
-        ((0.6, -5.0), (0.6, 0.0)),
-        ((0.6, 4.0), (0.6, 1.0)),
+        ((-0.7, 0.0), (0.0, 0.0)),
+        ((7.9, 0.0), (1.0, 0.0)),
+        ((0.7, -0.6), (0.7, 0.0)),
+        ((0.7, 3.5), (0.7, 1.0)),
+        ((0.7, 0.6), (0.7, 0.6)),
+        ((0.7, 0.6), (0.7, 0.6)),
     ];
 
     for ((basic_in, complex_in), (basic_out, complex_out)) in test_cases {
-        let ai = Ai::new(true, basic_in, complex_in);
+        let ai = Ai::new(true, basic_in, complex_in, Duration::from_secs(1));
 
         assert_eq!(
             ai.basic_gen_coeff(),

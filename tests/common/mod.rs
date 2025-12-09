@@ -19,7 +19,7 @@ pub fn create_test_planet() -> (
     ),
     crossbeam_channel::Sender<ExplorerToPlanet>,
 ) {
-    let planet_ai = Ai::new(true, 0.0, 0.0);
+    let planet_ai = Ai::new(true, 0.0, 0.0, Duration::from_secs(1));
 
     // Channel 1: Orchestrator -> Planet
     let (tx_orchestrator_to_planet, rx_orchestrator_to_planet) =

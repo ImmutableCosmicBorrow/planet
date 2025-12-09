@@ -24,8 +24,6 @@ pub use ai::Ai;
 /// * `Err(String)` - Error message if planet creation fails (e.g., empty gen_rules)
 pub fn create_planet(
     planet_ai: Ai,
-    gen_rules: Vec<BasicResourceType>,
-    comb_rules: Vec<ComplexResourceType>,
     orchestrator_channels: (Receiver<OrchestratorToPlanet>, Sender<PlanetToOrchestrator>),
     explorers_receiver: Receiver<ExplorerToPlanet>,
 ) -> Result<planet::Planet, String> {
@@ -33,8 +31,13 @@ pub fn create_planet(
         0,
         PlanetType::C,
         Box::new(planet_ai),
-        gen_rules,
-        comb_rules,
+        gen_rules: vec![BasicResourceType::Carbon],
+        comb_rules: vec![ComplexResourceType::AIPartner,
+                         ComplexResourceType::Diamond,
+                         ComplexResourceType::Dolphin,
+                         ComplexResourceType::Life,
+                         ComplexResourceType::Robot,
+                         ComplexResourceType::Water],
         orchestrator_channels,
         explorers_receiver,
     )

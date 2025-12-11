@@ -1,14 +1,14 @@
 fmt:
-    cargo fmt
+    make fmt
 
 lint:
-    cargo clippy -- -D warnings -A unused
+    make lint
 
 test:
-    cargo test
+    make test
 
 ci:
     just fmt && just lint && just test
 
 doc:
-    cargo doc
+    make doc

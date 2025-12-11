@@ -1,5 +1,4 @@
 use common_game::components::planet::Planet;
-use common_game::components::resource::{BasicResourceType, ComplexResourceType};
 use common_game::protocols::messages::{
     ExplorerToPlanet, OrchestratorToPlanet, PlanetToExplorer, PlanetToOrchestrator,
 };

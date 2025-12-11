@@ -18,8 +18,6 @@ pub struct Ai {
     random_mode: bool,
     pub(crate) basic_gen_coeff: f32,
     pub(crate) complex_gen_coeff: f32,
-    half_life: Duration,
-    min_time_constant: Duration,
     counters: Option<FrequencyCounter>,
 }
 
@@ -67,15 +65,12 @@ impl PlanetAI for Ai {
 
     fn start(&mut self, _state: &PlanetState) {
         self.is_ai_active = true;
-        self.counters = Some(FrequencyCounter::new(
-            self.half_life,
-            self.min_time_constant,
-        ));
+        self.counters.as_mut().unwrap().restart();
     }
 
     fn stop(&mut self, _state: &PlanetState) {
         self.is_ai_active = false;
-        self.counters = None;
+        self.counters.as_mut().unwrap().stop();
     }
 }
 
@@ -96,8 +91,6 @@ impl Ai {
             random_mode,
             basic_gen_coeff: checked_basic_gen_coeff,
             complex_gen_coeff: checked_complex_gen_coeff,
-            half_life,
-            min_time_constant,
             counters: Some(FrequencyCounter::new(half_life, min_time_constant)),
         }
     }

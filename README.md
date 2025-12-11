@@ -5,7 +5,7 @@ For the full context and course details, please refer to the [common organizatio
 ## The Planet
 Our planet serves as a sanctuary where explorers can safely rest and focus on crafting complex resources. We provide a robust environment featuring:
 - **Rocket Crafting**: Build rockets to successfully evade incoming Asteroids.
-- **Infinite Carbon**: Generate unlimited quantities of Carbon, the fundamental building block for advanced resources.
+- **Infinite Hydrogen**: Generate unlimited quantities of Hydrogen, the fundamental building block for advanced resources.
 - **Unrestricted Combination**: We support the crafting of every possible resource combination.
 
 ## Smart Power Management

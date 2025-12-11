@@ -2,7 +2,7 @@ mod common;
 
 use common::*;
 use common_game::components::forge::Forge;
-use common_game::components::resource::{BasicResourceType, ComplexResourceType};
+use common_game::components::resource::BasicResourceType;
 use common_game::protocols::messages::{
     ExplorerToPlanet, OrchestratorToPlanet, PlanetToExplorer, PlanetToOrchestrator,
 };
@@ -112,11 +112,11 @@ fn test_adaptive_ai() {
             }
         }
 
-        // b. Explorer asks Planet to create Carbon with probability EXPLORER_REQUEST_PROBABILITY, otherwise does nothing
+        // b. Explorer asks Planet to create Hydrogen with probability EXPLORER_REQUEST_PROBABILITY, otherwise does nothing
         if rand::random::<f32>() <= EXPLORER_REQUEST_PROBABILITY {
             let msg = ExplorerToPlanet::GenerateResourceRequest {
                 explorer_id: 0,
-                resource: BasicResourceType::Carbon,
+                resource: BasicResourceType::Hydrogen,
             };
 
             tx_explorer.send(msg).expect("Explorer failed to send");
@@ -124,7 +124,7 @@ fn test_adaptive_ai() {
 
             let response = rx_explorer.recv_timeout(Duration::from_millis(200));
 
-            //let response = explorer_send(&tx_explorer, &rx_explorer, ExplorerToPlanet::GenerateResourceRequest {explorer_id : 0, resource : BasicResourceType::Carbon});
+            //let response = explorer_send(&tx_explorer, &rx_explorer, ExplorerToPlanet::GenerateResourceRequest {explorer_id : 0, resource : BasicResourceType::Hydrogen});
 
             // TODO: now it is allowed for the response to be an Err, since if ai decides not to fulfil the request it returns None
             // might need to modify this if that return is changed

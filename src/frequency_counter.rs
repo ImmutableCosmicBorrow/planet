@@ -17,6 +17,10 @@ pub struct FrequencyCounter {
 
     // Minimum time constant
     min_time_constant: Duration,
+
+    // Stop time tracking
+    stop_time: Option<Instant>,
+    restart_time: Option<Instant>,
 }
 
 impl FrequencyCounter {
@@ -32,6 +36,8 @@ impl FrequencyCounter {
             last_update: None,
             sunray_probability: 0.5,
             min_time_constant,
+            stop_time: None,
+            restart_time: None,
         }
     }
 
@@ -87,6 +93,22 @@ impl FrequencyCounter {
     fn update_probability(&mut self) {
         let s = self.sun_intensity + self.asteroid_intensity;
         self.sunray_probability = if s > 0.0 { self.sun_intensity / s } else { 0.5 };
+    }
+
+    pub fn restart(&mut self) {
+        self.restart_time = Some(Instant::now());
+
+        // Adjust last_update to account for the time spent stopped
+        if let (Some(stop), Some(restart), Some(last)) =
+            (self.stop_time, self.restart_time, self.last_update)
+        {
+            let stopped_duration = restart.duration_since(stop);
+            self.last_update = Some(last + stopped_duration);
+        }
+    }
+
+    pub fn stop(&mut self) {
+        self.stop_time = Some(Instant::now());
     }
 
     pub fn sunray_probability(&mut self) -> f32 {

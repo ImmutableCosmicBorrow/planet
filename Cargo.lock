@@ -10,8 +10,8 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
 name = "common-game"
-version = "1.0.0"
-source = "git+https://github.com/unitn-ap-2025/common#057049b785e5c6e6ad3cd3967b6ff44b5989769c"
+version = "1.1.0"
+source = "git+https://github.com/unitn-ap-2025/common#68d38631bb12e5e1b33f47a33e4ba7b0e914c80b"
 dependencies = [
  "crossbeam-channel",
  "lazy_static",

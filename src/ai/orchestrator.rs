@@ -14,14 +14,10 @@ pub(super) fn handle_message(
     match msg {
         OrchestratorToPlanet::Sunray(sunray) => handle_sunray(ai, state, sunray),
 
-        OrchestratorToPlanet::StartPlanetAI => handle_start_ai(ai, state),
-
-        OrchestratorToPlanet::StopPlanetAI => handle_stop_ai(ai, state),
-
         OrchestratorToPlanet::InternalStateRequest => handle_internal_state_request(ai, state),
 
         _ => {
-            // Other messages are currently handled by the planet
+            // StartPlanetAI, StopPlanetAI and other messages are currently handled by the planet
             None
         }
     }
@@ -43,20 +39,6 @@ fn handle_sunray(
     }
 
     Some(PlanetToOrchestrator::SunrayAck {
-        planet_id: state.id(),
-    })
-}
-
-fn handle_start_ai(ai: &mut Ai, state: &mut PlanetState) -> Option<PlanetToOrchestrator> {
-    ai.start(state);
-    Some(PlanetToOrchestrator::StartPlanetAIResult {
-        planet_id: state.id(),
-    })
-}
-
-fn handle_stop_ai(ai: &mut Ai, state: &mut PlanetState) -> Option<PlanetToOrchestrator> {
-    ai.stop(state);
-    Some(PlanetToOrchestrator::StopPlanetAIResult {
         planet_id: state.id(),
     })
 }

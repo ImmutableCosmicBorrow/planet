@@ -116,11 +116,11 @@ impl FrequencyCounter {
         self.sunray_probability
     }
 
-    pub fn current_tau(&self) -> f32 {
+    /*pub fn current_tau(&self) -> f32 {
         self.half_life.as_secs_f32() / std::f32::consts::LN_2
     }
 
     pub fn debug_stats(&self) -> (f32, f32) {
         (self.sun_intensity, self.asteroid_intensity)
-    }
+    }*/
 }

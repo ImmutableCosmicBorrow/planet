@@ -354,7 +354,13 @@ fn test_available_cell_response() {
         _ => panic! {"Expected an AvailableEnergyCellResponse but received a different one"},
     }
 
-    // 6. Orchestrator sends sunray
+    // 6. Orchestrator sends two sunray
+    orchestrator_send(
+        &tx_orchestrator,
+        &rx_orchestrator,
+        OrchestratorToPlanet::Sunray(Sunray::default()),
+    );
+
     orchestrator_send(
         &tx_orchestrator,
         &rx_orchestrator,

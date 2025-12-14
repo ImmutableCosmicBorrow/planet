@@ -61,22 +61,11 @@ fn generate_resource(
     }
 
     let resource = match to_generate {
-        BasicResourceType::Carbon => generator
-            .make_carbon(state.cell_mut(0))
-            .ok()
-            .map(BasicResource::Carbon),
         BasicResourceType::Hydrogen => generator
             .make_hydrogen(state.cell_mut(0))
             .ok()
             .map(BasicResource::Hydrogen),
-        BasicResourceType::Silicon => generator
-            .make_silicon(state.cell_mut(0))
-            .ok()
-            .map(BasicResource::Silicon),
-        BasicResourceType::Oxygen => generator
-            .make_oxygen(state.cell_mut(0))
-            .ok()
-            .map(BasicResource::Oxygen),
+        _ => panic!("ICB planet can not generate any resource other than Hydrogen"),
     };
 
     Some(PlanetToExplorer::GenerateResourceResponse { resource })

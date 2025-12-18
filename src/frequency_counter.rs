@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-pub struct FrequencyCounter {
+pub(crate) struct FrequencyCounter {
     // Half-life for exponential decay
     half_life: Duration,
     impulse: f32,
@@ -116,10 +116,12 @@ impl FrequencyCounter {
         self.sunray_probability
     }
 
+    #[allow(dead_code)]
     pub fn current_tau(&self) -> f32 {
         self.half_life.as_secs_f32() / std::f32::consts::LN_2
     }
 
+    #[allow(dead_code)]
     pub fn debug_stats(&self) -> (f32, f32) {
         (self.sun_intensity, self.asteroid_intensity)
     }

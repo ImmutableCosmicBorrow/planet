@@ -1,9 +1,11 @@
+#![allow(clippy::pedantic)]
+
 mod common;
 
 use crate::common::*;
 use common_game::components::asteroid::Asteroid;
 use common_game::components::sunray::Sunray;
-use common_game::protocols::messages::{OrchestratorToPlanet, PlanetToOrchestrator};
+use common_game::protocols::orchestrator_planet::{OrchestratorToPlanet, PlanetToOrchestrator};
 use std::thread;
 use std::time::Duration;
 

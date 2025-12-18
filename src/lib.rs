@@ -1,8 +1,7 @@
 use common_game::components::planet::{self, PlanetType};
 use common_game::components::resource::{BasicResourceType, ComplexResourceType};
-use common_game::protocols::messages::{
-    ExplorerToPlanet, OrchestratorToPlanet, PlanetToOrchestrator,
-};
+use common_game::protocols::orchestrator_planet::{OrchestratorToPlanet, PlanetToOrchestrator};
+use common_game::protocols::planet_explorer::ExplorerToPlanet;
 use crossbeam_channel::{Receiver, Sender};
 
 mod ai;
@@ -21,7 +20,8 @@ pub use ai::Ai;
 ///
 /// # Returns
 /// * `Ok(Planet)` - Successfully created planet with ID 0 and type C
-/// * `Err(String)` - Error message if planet creation fails (e.g., empty gen_rules)
+/// # Errors
+/// * `Err(String)` - Error message if planet creation fails (e.g., empty `gen_rules`)
 pub fn create_planet(
     planet_ai: Ai,
     orchestrator_channels: (Receiver<OrchestratorToPlanet>, Sender<PlanetToOrchestrator>),

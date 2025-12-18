@@ -1,3 +1,5 @@
+#![allow(clippy::pedantic)]
+
 use planet::Ai;
 use std::time::Duration;
 

@@ -1,11 +1,12 @@
+#![allow(clippy::pedantic)]
+
 mod common;
 
 use common::*;
 use common_game::components::forge::Forge;
 use common_game::components::resource::BasicResourceType;
-use common_game::protocols::messages::{
-    ExplorerToPlanet, OrchestratorToPlanet, PlanetToExplorer, PlanetToOrchestrator,
-};
+use common_game::protocols::orchestrator_planet::{OrchestratorToPlanet, PlanetToOrchestrator};
+use common_game::protocols::planet_explorer::{ExplorerToPlanet, PlanetToExplorer};
 use planet::{Ai, create_planet};
 use std::thread;
 use std::time::Duration;
@@ -76,7 +77,7 @@ fn test_adaptive_ai() {
         &rx_orchestrator,
         OrchestratorToPlanet::IncomingExplorerRequest {
             explorer_id: 0,
-            new_mpsc_sender: tx_to_explorer,
+            new_sender: tx_to_explorer,
         },
     );
 

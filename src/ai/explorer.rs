@@ -5,7 +5,7 @@ use common_game::components::resource::{
     BasicResource, BasicResourceType, Combinator, ComplexResource, ComplexResourceRequest,
     Generator,
 };
-use common_game::protocols::messages::{ExplorerToPlanet, PlanetToExplorer};
+use common_game::protocols::planet_explorer::{ExplorerToPlanet, PlanetToExplorer};
 
 pub(super) fn handle_message(
     ai: &mut Ai,
@@ -14,39 +14,46 @@ pub(super) fn handle_message(
     combinator: &Combinator,
     msg: ExplorerToPlanet,
 ) -> Option<PlanetToExplorer> {
-    match msg {
-        ExplorerToPlanet::SupportedResourceRequest { .. } => supported_resources(generator),
+    if ai.is_ai_active {
+        match msg {
+            ExplorerToPlanet::SupportedResourceRequest { .. } => {
+                Some(supported_resources(generator))
+            }
 
-        ExplorerToPlanet::SupportedCombinationRequest { .. } => supported_combinations(combinator),
+            ExplorerToPlanet::SupportedCombinationRequest { .. } => {
+                Some(supported_combinations(combinator))
+            }
+            ExplorerToPlanet::GenerateResourceRequest { resource, .. } => {
+                Some(generate_resource(ai, state, generator, resource))
+            }
 
-        ExplorerToPlanet::GenerateResourceRequest { resource, .. } => {
-            generate_resource(ai, state, generator, resource)
+            ExplorerToPlanet::CombineResourceRequest { msg, .. } => {
+                Some(combine_resource(ai, state, combinator, msg))
+            }
+
+            ExplorerToPlanet::AvailableEnergyCellRequest { .. } => {
+                Some(PlanetToExplorer::AvailableEnergyCellResponse {
+                    available_cells: u32::from(state.cell(0).is_charged()),
+                })
+            }
         }
-
-        ExplorerToPlanet::CombineResourceRequest { msg, .. } => {
-            combine_resource(ai, state, combinator, msg)
-        }
-
-        ExplorerToPlanet::AvailableEnergyCellRequest { .. } => {
-            Some(PlanetToExplorer::AvailableEnergyCellResponse {
-                available_cells: if state.cell(0).is_charged() { 1 } else { 0 },
-            })
-        }
+    } else {
+        None
     }
 }
 
 /// Returns the available Basic Resources set of the planet
-fn supported_resources(generator: &Generator) -> Option<PlanetToExplorer> {
-    Some(PlanetToExplorer::SupportedResourceResponse {
+fn supported_resources(generator: &Generator) -> PlanetToExplorer {
+    PlanetToExplorer::SupportedResourceResponse {
         resource_list: generator.all_available_recipes(),
-    })
+    }
 }
 
 /// Returns the available Complex Resources set of the planet
-fn supported_combinations(combinator: &Combinator) -> Option<PlanetToExplorer> {
-    Some(PlanetToExplorer::SupportedCombinationResponse {
+fn supported_combinations(combinator: &Combinator) -> PlanetToExplorer {
+    PlanetToExplorer::SupportedCombinationResponse {
         combination_list: combinator.all_available_recipes(),
-    })
+    }
 }
 
 /// Return the optional Basic resource generated
@@ -55,9 +62,9 @@ fn generate_resource(
     state: &mut PlanetState,
     generator: &Generator,
     to_generate: BasicResourceType,
-) -> Option<PlanetToExplorer> {
+) -> PlanetToExplorer {
     if !generate_basic_resource(ai, state) {
-        return Some(PlanetToExplorer::GenerateResourceResponse { resource: None });
+        return PlanetToExplorer::GenerateResourceResponse { resource: None };
     }
 
     let resource = match to_generate {
@@ -79,7 +86,7 @@ fn generate_resource(
             .map(BasicResource::Oxygen),
     };
 
-    Some(PlanetToExplorer::GenerateResourceResponse { resource })
+    PlanetToExplorer::GenerateResourceResponse { resource }
 }
 
 /// Returns the optional complex resource created
@@ -88,7 +95,7 @@ fn combine_resource(
     state: &mut PlanetState,
     combinator: &Combinator,
     msg: ComplexResourceRequest,
-) -> Option<PlanetToExplorer> {
+) -> PlanetToExplorer {
     if !generate_complex_resource(ai, state) {
         let response = match msg {
             ComplexResourceRequest::Water(r1, r2) => Err((
@@ -128,9 +135,9 @@ fn combine_resource(
             )),
         };
 
-        return Some(PlanetToExplorer::CombineResourceResponse {
+        return PlanetToExplorer::CombineResourceResponse {
             complex_response: response,
-        });
+        };
     }
 
     //trying to craft resource
@@ -166,5 +173,5 @@ fn combine_resource(
             .map_err(|(s, r1, r2)| (s, r1.to_generic(), r2.to_generic())),
     };
 
-    Some(PlanetToExplorer::CombineResourceResponse { complex_response })
+    PlanetToExplorer::CombineResourceResponse { complex_response }
 }

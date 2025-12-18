@@ -1,8 +1,10 @@
+#![allow(clippy::pedantic)]
+
 mod common;
 
 use common::*;
 use common_game::components::forge::Forge;
-use common_game::protocols::messages::{OrchestratorToPlanet, PlanetToOrchestrator};
+use common_game::protocols::orchestrator_planet::{OrchestratorToPlanet, PlanetToOrchestrator};
 
 #[test]
 fn test_handle_asteroid() {
@@ -23,10 +25,7 @@ fn test_handle_asteroid() {
         OrchestratorToPlanet::Sunray(forge.generate_sunray()),
     );
     assert!(
-        match response {
-            PlanetToOrchestrator::SunrayAck { .. } => true,
-            _ => false,
-        },
+        matches!(response, PlanetToOrchestrator::SunrayAck { .. }),
         "Expected SunrayAck but got a different message"
     );
 
@@ -36,10 +35,7 @@ fn test_handle_asteroid() {
         OrchestratorToPlanet::Sunray(forge.generate_sunray()),
     );
     assert!(
-        match response {
-            PlanetToOrchestrator::SunrayAck { .. } => true,
-            _ => false,
-        },
+        matches!(response, PlanetToOrchestrator::SunrayAck { .. }),
         "Expected SunrayAck but got a different message"
     );
 

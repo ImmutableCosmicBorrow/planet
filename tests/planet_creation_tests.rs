@@ -1,7 +1,7 @@
-use common_game::components::resource::{BasicResourceType, ComplexResourceType};
-use common_game::protocols::messages::{
-    ExplorerToPlanet, OrchestratorToPlanet, PlanetToOrchestrator,
-};
+#![allow(clippy::pedantic)]
+
+use common_game::protocols::orchestrator_planet::{OrchestratorToPlanet, PlanetToOrchestrator};
+use common_game::protocols::planet_explorer::ExplorerToPlanet;
 use crossbeam_channel::unbounded;
 use planet::{Ai, create_planet};
 use std::time::Duration;

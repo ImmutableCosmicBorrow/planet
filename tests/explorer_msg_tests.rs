@@ -1,12 +1,12 @@
+#![allow(clippy::pedantic)]
+
 mod common;
 
 use common::*;
-use common_game::components::resource::{
-    BasicResourceType, ComplexResourceRequest, ComplexResourceType,
-};
+use common_game::components::resource::{BasicResourceType, ComplexResourceType};
 use common_game::components::sunray::Sunray;
-use common_game::protocols::messages::{ExplorerToPlanet, OrchestratorToPlanet, PlanetToExplorer};
-use crossbeam_channel;
+use common_game::protocols::orchestrator_planet::OrchestratorToPlanet;
+use common_game::protocols::planet_explorer::{ExplorerToPlanet, PlanetToExplorer};
 use std::collections::HashSet;
 
 #[test]
@@ -26,7 +26,7 @@ fn test_supported_resource_response() {
         &rx_orchestrator,
         OrchestratorToPlanet::IncomingExplorerRequest {
             explorer_id: 0,
-            new_mpsc_sender: tx_to_explorer,
+            new_sender: tx_to_explorer,
         },
     );
 
@@ -74,7 +74,7 @@ fn test_supported_combination_response() {
         &rx_orchestrator,
         OrchestratorToPlanet::IncomingExplorerRequest {
             explorer_id: 0,
-            new_mpsc_sender: tx_to_explorer,
+            new_sender: tx_to_explorer,
         },
     );
 
@@ -129,7 +129,7 @@ fn test_generate_resource_response() {
         &rx_orchestrator,
         OrchestratorToPlanet::IncomingExplorerRequest {
             explorer_id: 0,
-            new_mpsc_sender: tx_to_explorer,
+            new_sender: tx_to_explorer,
         },
     );
 
@@ -207,7 +207,7 @@ fn test_combine_resource_response() {
         &rx_orchestrator,
         OrchestratorToPlanet::IncomingExplorerRequest {
             explorer_id: 0,
-            new_mpsc_sender: tx_to_explorer.clone(),
+            new_sender: tx_to_explorer.clone(),
         },
     );
 
@@ -329,7 +329,7 @@ fn test_available_cell_response() {
         &rx_orchestrator,
         OrchestratorToPlanet::IncomingExplorerRequest {
             explorer_id: 0,
-            new_mpsc_sender: tx_to_explorer,
+            new_sender: tx_to_explorer,
         },
     );
 

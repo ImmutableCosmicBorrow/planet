@@ -3,7 +3,7 @@
 use common_game::components::planet::Planet;
 use common_game::protocols::orchestrator_planet::{OrchestratorToPlanet, PlanetToOrchestrator};
 use common_game::protocols::planet_explorer::{ExplorerToPlanet, PlanetToExplorer};
-use planet::{Ai, create_planet};
+use immutable_cosmic_borrow::{Ai, create_planet};
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Duration;
@@ -43,6 +43,7 @@ pub fn create_test_planet() -> (
 
     let planet = create_planet(
         planet_ai,
+        0,
         (rx_orchestrator_to_planet, tx_planet_to_orchestrator),
         rx_explorer_to_planet,
     );

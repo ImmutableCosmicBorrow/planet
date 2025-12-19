@@ -68,6 +68,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
+name = "immutable_cosmic_borrow"
+version = "1.0.0"
+dependencies = [
+ "common-game",
+ "crossbeam-channel",
+ "rand",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -90,15 +99,6 @@ name = "paste"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
-
-[[package]]
-name = "planet"
-version = "0.2.1"
-dependencies = [
- "common-game",
- "crossbeam-channel",
- "rand",
-]
 
 [[package]]
 name = "ppv-lite86"

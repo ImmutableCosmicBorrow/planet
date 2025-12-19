@@ -1,6 +1,6 @@
 [package]
-name = "planet"
-version = "0.2.1"
+name = "immutable_cosmic_borrow"
+version = "1.0.0"
 edition = "2024"
 
 [dependencies]

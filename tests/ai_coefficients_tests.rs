@@ -1,6 +1,6 @@
 #![allow(clippy::pedantic)]
 
-use planet::Ai;
+use immutable_cosmic_borrow::Ai;
 use std::time::Duration;
 
 /// Test that AI coefficients within the valid range [0.0, 1.0] are preserved

@@ -4,6 +4,6 @@ version = "1.0.0"
 edition = "2024"
 
 [dependencies]
-common-game = { git = "https://github.com/unitn-ap-2025/common" }
+common-game = "2.0.0"
 rand = "0.9.2"
 crossbeam-channel = "0.5.15"

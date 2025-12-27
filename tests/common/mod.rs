@@ -68,6 +68,8 @@ pub fn orchestrator_start_planet(
         .recv_timeout(Duration::from_millis(200))
         .expect("Orchestrator failed to receive");
 }
+
+#[allow(dead_code)]
 pub fn orchestrator_kill_planet(
     tx_orchestrator: &crossbeam_channel::Sender<OrchestratorToPlanet>,
     rx_orchestrator: &crossbeam_channel::Receiver<PlanetToOrchestrator>,

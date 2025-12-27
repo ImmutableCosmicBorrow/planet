@@ -124,5 +124,5 @@ impl FrequencyCounter {
     #[allow(dead_code)]
     pub fn debug_stats(&self) -> (f32, f32) {
         (self.sun_intensity, self.asteroid_intensity)
-    }*/
+    }
 }

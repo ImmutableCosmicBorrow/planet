@@ -2,7 +2,7 @@ mod common;
 
 use common::*;
 use common_game::components::forge::Forge;
-use common_game::protocols::messages::{OrchestratorToPlanet, PlanetToOrchestrator};
+use common_game::protocols::orchestrator_planet::{OrchestratorToPlanet, PlanetToOrchestrator};
 
 #[test]
 fn start_and_stop() {
@@ -11,7 +11,7 @@ fn start_and_stop() {
     let forge = Forge::new().unwrap();
 
     // 1. Create thread
-    let handle = start_thread(planet);
+    let _handle = start_thread(planet);
 
     // 2. Orchestrator starts planet
     orchestrator_start_planet(&tx_orchestrator, &rx_orchestrator);
@@ -23,10 +23,7 @@ fn start_and_stop() {
         OrchestratorToPlanet::Sunray(forge.generate_sunray()),
     );
     assert!(
-        match response {
-            PlanetToOrchestrator::SunrayAck { .. } => true,
-            _ => false,
-        },
+        matches!(response, PlanetToOrchestrator::SunrayAck { .. }),
         "Expected SunrayAck but got a different message"
     );
 
@@ -36,10 +33,7 @@ fn start_and_stop() {
         OrchestratorToPlanet::StopPlanetAI,
     );
     assert!(
-        match response {
-            PlanetToOrchestrator::StopPlanetAIResult { .. } => true,
-            _ => false,
-        },
+        matches!(response, PlanetToOrchestrator::StopPlanetAIResult { .. }),
         "Expected StopPlanetAIResult but got a different message"
     );
 
@@ -49,10 +43,7 @@ fn start_and_stop() {
         OrchestratorToPlanet::StartPlanetAI,
     );
     assert!(
-        match response {
-            PlanetToOrchestrator::StartPlanetAIResult { .. } => true,
-            _ => false,
-        },
+        matches!(response, PlanetToOrchestrator::StartPlanetAIResult { .. }),
         "Expected StartPlanetAIResult but got a different message"
     );
 }

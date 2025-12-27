@@ -9,6 +9,9 @@ pub fn handle_asteroid(
     _generator: &Generator,
     _combinator: &Combinator,
 ) -> Option<Rocket> {
+    if !ai.is_ai_active {
+        return None;
+    }
     if let Some(counters) = ai.counters_mut() {
         counters.update_asteroid();
     }

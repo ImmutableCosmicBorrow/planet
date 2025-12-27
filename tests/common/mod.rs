@@ -1,15 +1,16 @@
+#![allow(clippy::pedantic)]
+
 use common_game::components::planet::Planet;
-use common_game::protocols::messages::{
-    ExplorerToPlanet, OrchestratorToPlanet, PlanetToExplorer, PlanetToOrchestrator,
-};
-use crossbeam_channel;
-use planet::{Ai, create_planet};
+use common_game::protocols::orchestrator_planet::{OrchestratorToPlanet, PlanetToOrchestrator};
+use common_game::protocols::planet_explorer::{ExplorerToPlanet, PlanetToExplorer};
+use immutable_cosmic_borrow::{Ai, create_planet};
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Duration;
 
 // Helper functions to test the planet AI behaviour
 
+#[allow(dead_code)]
 pub fn create_test_planet() -> (
     Planet,
     (
@@ -42,6 +43,7 @@ pub fn create_test_planet() -> (
 
     let planet = create_planet(
         planet_ai,
+        0,
         (rx_orchestrator_to_planet, tx_planet_to_orchestrator),
         rx_explorer_to_planet,
     );
@@ -71,13 +73,14 @@ pub fn orchestrator_kill_planet(
     rx_orchestrator: &crossbeam_channel::Receiver<PlanetToOrchestrator>,
 ) {
     let _ = orchestrator_send(
-        &tx_orchestrator,
-        &rx_orchestrator,
+        tx_orchestrator,
+        rx_orchestrator,
         OrchestratorToPlanet::KillPlanet,
     );
     thread::sleep(Duration::from_millis(200));
 }
 
+#[allow(dead_code)]
 pub fn orchestrator_stop_planet(
     tx_orchestrator: &crossbeam_channel::Sender<OrchestratorToPlanet>,
     rx_orchestrator: &crossbeam_channel::Receiver<PlanetToOrchestrator>,
@@ -91,8 +94,8 @@ pub fn orchestrator_stop_planet(
         .expect("Orchestrator failed to receive");
 
     orchestrator_send(
-        &tx_orchestrator,
-        &rx_orchestrator,
+        tx_orchestrator,
+        rx_orchestrator,
         OrchestratorToPlanet::KillPlanet,
     );
 }
@@ -107,6 +110,8 @@ pub fn orchestrator_send(
     rx.recv_timeout(Duration::from_millis(200))
         .expect("Orchestrator failed to receive")
 }
+
+#[allow(dead_code)]
 pub fn explorer_send(
     tx: &crossbeam_channel::Sender<ExplorerToPlanet>,
     rx: &crossbeam_channel::Receiver<PlanetToExplorer>,

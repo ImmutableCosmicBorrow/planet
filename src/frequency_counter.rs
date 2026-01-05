@@ -1,3 +1,4 @@
+use common_game::logging::{Channel, EventType, LogEvent, Payload};
 use std::time::{Duration, Instant};
 
 pub(crate) struct FrequencyCounter {
@@ -62,6 +63,8 @@ impl FrequencyCounter {
 
         // Update probability
         self.update_probability();
+
+        self.log_counter(if is_sunray { "sunray" } else { "asteroid" });
     }
 
     fn update_no_event(&mut self, force_decay: bool) {
@@ -105,10 +108,14 @@ impl FrequencyCounter {
             let stopped_duration = restart.duration_since(stop);
             self.last_update = Some(last + stopped_duration);
         }
+
+        self.log_counter("restart");
     }
 
     pub fn stop(&mut self) {
         self.stop_time = Some(Instant::now());
+
+        self.log_counter("stop");
     }
 
     pub fn sunray_probability(&mut self) -> f32 {
@@ -124,5 +131,21 @@ impl FrequencyCounter {
     #[allow(dead_code)]
     pub fn debug_stats(&self) -> (f32, f32) {
         (self.sun_intensity, self.asteroid_intensity)
+    }
+
+    fn log_counter(&self, action: &str) {
+        let mut payload = Payload::new();
+        payload.insert("action".into(), action.into());
+        payload.insert("sun_intensity".into(), format!("{:.6}", self.sun_intensity));
+        payload.insert(
+            "asteroid_intensity".into(),
+            format!("{:.6}", self.asteroid_intensity),
+        );
+        payload.insert(
+            "sunray_probability".into(),
+            format!("{:.6}", self.sunray_probability),
+        );
+
+        LogEvent::system(EventType::InternalPlanetAction, Channel::Debug, payload).emit();
     }
 }

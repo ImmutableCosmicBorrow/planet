@@ -8,8 +8,10 @@ use common_game::components::planet::PlanetAI;
 use common_game::components::planet::PlanetState;
 use common_game::components::resource::{Combinator, Generator};
 use common_game::components::rocket::Rocket;
+use common_game::logging::{ActorType, Channel, EventType, LogEvent, Participant, Payload};
 use common_game::protocols::orchestrator_planet::PlanetToOrchestrator;
 use common_game::protocols::planet_explorer::{ExplorerToPlanet, PlanetToExplorer};
+use common_game::utils::ID;
 use std::time::Duration;
 
 pub struct Ai {
@@ -60,7 +62,7 @@ impl PlanetAI for Ai {
         _combinator: &Combinator,
     ) -> common_game::components::planet::DummyPlanetState {
         if let PlanetToOrchestrator::InternalStateResponse { planet_state, .. } =
-            orchestrator::handle_internal_state_request(self, state)
+            orchestrator::handle_internal_state_request(state)
         {
             return planet_state;
         }
@@ -106,14 +108,36 @@ impl Ai {
         //check that coefficients are in bounds and eventually correct them
         let checked_basic_gen_coeff = basic_gen_coeff.clamp(0.0, 1.0);
         let checked_complex_gen_coeff = complex_gen_coeff.clamp(0.0, 1.0);
-
-        Ai {
+        let ai = Ai {
             is_ai_active: false,
             random_mode,
             basic_gen_coeff: checked_basic_gen_coeff,
             complex_gen_coeff: checked_complex_gen_coeff,
             counters: Some(FrequencyCounter::new(half_life, min_time_constant)),
-        }
+        };
+
+        let mut payload = Payload::new();
+        payload.insert("random_mode".into(), random_mode.to_string());
+        payload.insert(
+            "basic_gen_coeff".into(),
+            format!("{checked_basic_gen_coeff:.4}"),
+        );
+        payload.insert(
+            "complex_gen_coeff".into(),
+            format!("{checked_complex_gen_coeff:.4}"),
+        );
+        payload.insert(
+            "half_life_secs".into(),
+            format!("{:.4}", half_life.as_secs_f32()),
+        );
+        payload.insert(
+            "min_time_constant_secs".into(),
+            format!("{:.4}", min_time_constant.as_secs_f32()),
+        );
+
+        LogEvent::system(EventType::InternalPlanetAction, Channel::Debug, payload).emit();
+
+        ai
     }
 
     pub(crate) fn counters_mut(&mut self) -> &mut Option<FrequencyCounter> {
@@ -133,5 +157,34 @@ impl Ai {
     #[must_use]
     pub fn complex_gen_coeff(&self) -> f32 {
         self.complex_gen_coeff
+    }
+
+    pub(crate) fn planet_participant(state: &PlanetState) -> Participant {
+        Participant::new(ActorType::Planet, state.id())
+    }
+
+    pub(crate) fn orchestrator_participant() -> Participant {
+        Participant::new(ActorType::Orchestrator, 0u32)
+    }
+
+    pub(crate) fn explorer_participant(explorer_id: ID) -> Participant {
+        Participant::new(ActorType::Explorer, explorer_id)
+    }
+
+    pub(crate) fn log_planet_event(
+        state: &PlanetState,
+        receiver: Option<Participant>,
+        event_type: EventType,
+        channel: Channel,
+        payload: Payload,
+    ) {
+        LogEvent::new(
+            Some(Ai::planet_participant(state)),
+            receiver,
+            event_type,
+            channel,
+            payload,
+        )
+        .emit();
     }
 }

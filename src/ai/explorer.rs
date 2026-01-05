@@ -1,3 +1,5 @@
+use crate::ai;
+
 use super::Ai;
 use super::decide::{generate_basic_resource, generate_complex_resource};
 use common_game::components::planet::PlanetState;
@@ -5,6 +7,7 @@ use common_game::components::resource::{
     BasicResource, BasicResourceType, Combinator, ComplexResource, ComplexResourceRequest,
     Generator,
 };
+use common_game::logging::{Channel, EventType, Payload};
 use common_game::protocols::planet_explorer::{ExplorerToPlanet, PlanetToExplorer};
 
 pub(super) fn handle_message(
@@ -14,32 +17,46 @@ pub(super) fn handle_message(
     combinator: &Combinator,
     msg: ExplorerToPlanet,
 ) -> Option<PlanetToExplorer> {
-    if ai.is_ai_active {
-        match msg {
-            ExplorerToPlanet::SupportedResourceRequest { .. } => {
-                Some(supported_resources(generator))
-            }
+    let explorer_id = msg.explorer_id();
 
-            ExplorerToPlanet::SupportedCombinationRequest { .. } => {
-                Some(supported_combinations(combinator))
-            }
-            ExplorerToPlanet::GenerateResourceRequest { resource, .. } => {
-                Some(generate_resource(ai, state, generator, resource))
-            }
-
-            ExplorerToPlanet::CombineResourceRequest { msg, .. } => {
-                Some(combine_resource(ai, state, combinator, msg))
-            }
-
-            ExplorerToPlanet::AvailableEnergyCellRequest { .. } => {
-                Some(PlanetToExplorer::AvailableEnergyCellResponse {
-                    available_cells: u32::from(state.cell(0).is_charged()),
-                })
-            }
-        }
-    } else {
-        None
+    if !ai.is_ai_active {
+        return None;
     }
+
+    let response = match msg {
+        ExplorerToPlanet::SupportedResourceRequest { .. } => Some(supported_resources(generator)),
+
+        ExplorerToPlanet::SupportedCombinationRequest { .. } => {
+            Some(supported_combinations(combinator))
+        }
+        ExplorerToPlanet::GenerateResourceRequest { resource, .. } => {
+            Some(generate_resource(ai, state, generator, resource))
+        }
+
+        ExplorerToPlanet::CombineResourceRequest { msg, .. } => {
+            Some(combine_resource(ai, state, combinator, msg))
+        }
+
+        ExplorerToPlanet::AvailableEnergyCellRequest { .. } => {
+            Some(PlanetToExplorer::AvailableEnergyCellResponse {
+                available_cells: u32::from(state.cell(0).is_charged()),
+            })
+        }
+    };
+
+    if let Some(ref resp) = response {
+        let mut payload = Payload::new();
+        payload.insert("response".into(), response_label(resp).into());
+        ai::Ai::log_planet_event(
+            state,
+            Some(ai::Ai::explorer_participant(explorer_id)),
+            EventType::MessagePlanetToExplorer,
+            Channel::Trace,
+            payload,
+        );
+    }
+
+    response
 }
 
 /// Returns the available Basic Resources set of the planet
@@ -63,7 +80,18 @@ fn generate_resource(
     generator: &Generator,
     to_generate: BasicResourceType,
 ) -> PlanetToExplorer {
+    let mut payload = Payload::new();
+    payload.insert("requested_resource".into(), format!("{to_generate:?}"));
+
     if !generate_basic_resource(ai, state) {
+        payload.insert("decision".into(), "denied".into());
+        ai::Ai::log_planet_event(
+            state,
+            None,
+            EventType::InternalPlanetAction,
+            Channel::Debug,
+            payload,
+        );
         return PlanetToExplorer::GenerateResourceResponse { resource: None };
     }
 
@@ -75,6 +103,17 @@ fn generate_resource(
         _ => panic!("ICB planet can not generate any resource other than Hydrogen"),
     };
 
+    let mut payload = Payload::new();
+    payload.insert("requested_resource".into(), format!("{to_generate:?}"));
+    payload.insert("generated".into(), resource.is_some().to_string());
+    ai::Ai::log_planet_event(
+        state,
+        None,
+        EventType::InternalPlanetAction,
+        Channel::Debug,
+        payload,
+    );
+
     PlanetToExplorer::GenerateResourceResponse { resource }
 }
 
@@ -85,6 +124,9 @@ fn combine_resource(
     combinator: &Combinator,
     msg: ComplexResourceRequest,
 ) -> PlanetToExplorer {
+    let mut payload = Payload::new();
+    payload.insert("requested_combination".into(), format!("{msg:?}"));
+
     if !generate_complex_resource(ai, state) {
         let response = match msg {
             ComplexResourceRequest::Water(r1, r2) => Err((
@@ -124,6 +166,15 @@ fn combine_resource(
             )),
         };
 
+        payload.insert("decision".into(), "denied".into());
+        ai::Ai::log_planet_event(
+            state,
+            None,
+            EventType::InternalPlanetAction,
+            Channel::Debug,
+            payload,
+        );
+
         return PlanetToExplorer::CombineResourceResponse {
             complex_response: response,
         };
@@ -162,5 +213,32 @@ fn combine_resource(
             .map_err(|(s, r1, r2)| (s, r1.to_generic(), r2.to_generic())),
     };
 
+    payload.insert(
+        "decision".into(),
+        if complex_response.is_ok() {
+            "crafted".into()
+        } else {
+            "failed".into()
+        },
+    );
+    ai::Ai::log_planet_event(
+        state,
+        None,
+        EventType::InternalPlanetAction,
+        Channel::Debug,
+        payload,
+    );
+
     PlanetToExplorer::CombineResourceResponse { complex_response }
+}
+
+fn response_label(resp: &PlanetToExplorer) -> &'static str {
+    match resp {
+        PlanetToExplorer::SupportedResourceResponse { .. } => "SupportedResourceResponse",
+        PlanetToExplorer::SupportedCombinationResponse { .. } => "SupportedCombinationResponse",
+        PlanetToExplorer::GenerateResourceResponse { .. } => "GenerateResourceResponse",
+        PlanetToExplorer::CombineResourceResponse { .. } => "CombineResourceResponse",
+        PlanetToExplorer::AvailableEnergyCellResponse { .. } => "AvailableEnergyCellResponse",
+        PlanetToExplorer::Stopped => "Stopped",
+    }
 }

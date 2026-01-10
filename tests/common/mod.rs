@@ -3,7 +3,7 @@
 use common_game::components::planet::Planet;
 use common_game::protocols::orchestrator_planet::{OrchestratorToPlanet, PlanetToOrchestrator};
 use common_game::protocols::planet_explorer::{ExplorerToPlanet, PlanetToExplorer};
-use immutable_cosmic_borrow::{Ai, create_planet};
+use immutable_cosmic_borrow::create_planet;
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Duration;
@@ -19,14 +19,6 @@ pub fn create_test_planet() -> (
     ),
     crossbeam_channel::Sender<ExplorerToPlanet>,
 ) {
-    let planet_ai = Ai::new(
-        true,
-        0.0,
-        0.0,
-        Duration::from_secs(1),
-        Duration::from_millis(100),
-    );
-
     // Channel 1: Orchestrator -> Planet
     let (tx_orchestrator_to_planet, rx_orchestrator_to_planet) =
         crossbeam_channel::bounded::<OrchestratorToPlanet>(1);
@@ -42,7 +34,11 @@ pub fn create_test_planet() -> (
         crossbeam_channel::bounded::<PlanetToExplorer>(1);
 
     let planet = create_planet(
-        planet_ai,
+        true,
+        0.0,
+        0.0,
+        Duration::from_millis(100),
+        Duration::from_secs(1),
         0,
         (rx_orchestrator_to_planet, tx_planet_to_orchestrator),
         rx_explorer_to_planet,

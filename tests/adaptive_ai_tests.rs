@@ -7,7 +7,7 @@ use common_game::components::forge::Forge;
 use common_game::components::resource::BasicResourceType;
 use common_game::protocols::orchestrator_planet::{OrchestratorToPlanet, PlanetToOrchestrator};
 use common_game::protocols::planet_explorer::{ExplorerToPlanet, PlanetToExplorer};
-use immutable_cosmic_borrow::{Ai, create_planet};
+use immutable_cosmic_borrow::create_planet;
 use std::thread;
 use std::time::Duration;
 
@@ -30,15 +30,6 @@ fn test_adaptive_ai() {
 
     let forge = Forge::new().unwrap();
 
-    // Creating the Planet
-
-    let planet_ai = Ai::new(
-        false,
-        BASIC_GEN_COEFFICIENT,
-        COMPLEX_GEN_COEFFICIENT,
-        Duration::from_secs(1),
-        Duration::from_millis(100),
-    );
     // Channel 1: Orchestrator -> Planet
     let (tx_orchestrator, rx_orchestrator_to_planet) =
         crossbeam_channel::bounded::<OrchestratorToPlanet>(1);
@@ -53,7 +44,11 @@ fn test_adaptive_ai() {
         crossbeam_channel::bounded::<PlanetToExplorer>(1);
 
     let planet = create_planet(
-        planet_ai,
+        false,
+        BASIC_GEN_COEFFICIENT,
+        COMPLEX_GEN_COEFFICIENT,
+        Duration::from_secs(1),
+        Duration::from_millis(100),
         1,
         (rx_orchestrator_to_planet, tx_planet_to_orchestrator),
         rx_explorer_to_planet,

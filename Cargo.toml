@@ -1,9 +1,9 @@
 [package]
 name = "immutable_cosmic_borrow"
-version = "1.1.0"
+version = "2.0.0"
 edition = "2024"
 
 [dependencies]
-common-game = "2.0.0"
+common-game = "=3.0.0-rc.1"
 rand = "0.9.2"
 crossbeam-channel = "0.5.15"

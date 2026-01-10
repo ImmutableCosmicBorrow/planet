@@ -10,9 +10,9 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
 name = "common-game"
-version = "2.0.0"
+version = "3.0.0-rc.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1d6009e12eeebcf2e91893fb174f92fe117c3c57703efdafe2a6862a04c0265"
+checksum = "a805e7d9d61376a2cdcf840bd5bd08e81468cb325546dc51d5adea1985d9d918"
 dependencies = [
  "crossbeam-channel",
  "enum-as-inner",
@@ -70,7 +70,7 @@ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "immutable_cosmic_borrow"
-version = "1.1.0"
+version = "2.0.0"
 dependencies = [
  "common-game",
  "crossbeam-channel",

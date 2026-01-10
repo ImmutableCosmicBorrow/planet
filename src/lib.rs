@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use common_game::components::planet::{self, PlanetType};
 use common_game::components::resource::{BasicResourceType, ComplexResourceType};
 use common_game::protocols::orchestrator_planet::{OrchestratorToPlanet, PlanetToOrchestrator};
@@ -23,8 +25,13 @@ pub use ai::Ai;
 /// * `Ok(Planet)` - Successfully created planet with ID 0 and type C
 /// # Errors
 /// * `Err(String)` - Error message if planet creation fails (e.g., empty `gen_rules`)
+#[allow(clippy::too_many_arguments)]
 pub fn create_planet(
-    planet_ai: Ai,
+    random_mode: bool,
+    basic_gen_coeff: f32,
+    complex_gen_coeff: f32,
+    half_life: Duration,
+    min_time_constant: Duration,
     id: ID,
     orchestrator_channels: (Receiver<OrchestratorToPlanet>, Sender<PlanetToOrchestrator>),
     explorers_receiver: Receiver<ExplorerToPlanet>,
@@ -32,7 +39,13 @@ pub fn create_planet(
     planet::Planet::new(
         id,
         PlanetType::C,
-        Box::new(planet_ai),
+        Box::new(Ai::new(
+            random_mode,
+            basic_gen_coeff,
+            complex_gen_coeff,
+            half_life,
+            min_time_constant,
+        )),
         vec![BasicResourceType::Hydrogen],
         vec![
             ComplexResourceType::AIPartner,

@@ -21,7 +21,6 @@ fn test_adaptive_ai() {
     // Variables for statistics
     let mut accepted_explorer_requests = 0;
     let mut refused_explorer_requests = 0;
-    let mut dont_have_energycell = 0;
     let mut asteroids_avoided = 0;
     let mut sunrays_received = 0;
     let mut iterations = 0;
@@ -85,12 +84,15 @@ fn test_adaptive_ai() {
         // a. Orchestrator sends a Sunray with probability SUNRAY_PROBABILITY - modifier, otherwise sends Asteroid
         if rand::random::<f32>() <= SUNRAY_PROBABILITY - sunray_probability_modifier {
             print!("S");
-            let _ = orchestrator_send(
+            let response = orchestrator_send(
                 &tx_orchestrator,
                 &rx_orchestrator,
                 OrchestratorToPlanet::Sunray(forge.generate_sunray()),
             );
-            sunrays_received += 1;
+            match response {
+                PlanetToOrchestrator::SunrayAck { .. } => sunrays_received += 1,
+                _ => panic!("Expected SunrayAck but received different response"),
+            }
         } else {
             print!("A");
             let response = orchestrator_send(
@@ -121,10 +123,6 @@ fn test_adaptive_ai() {
 
             let response = rx_explorer.recv_timeout(Duration::from_millis(200));
 
-            //let response = explorer_send(&tx_explorer, &rx_explorer, ExplorerToPlanet::GenerateResourceRequest {explorer_id : 0, resource : BasicResourceType::Hydrogen});
-
-            // TODO: now it is allowed for the response to be an Err, since if ai decides not to fulfil the request it returns None
-            // might need to modify this if that return is changed
             match response {
                 Ok(PlanetToExplorer::GenerateResourceResponse { resource: None }) => {
                     refused_explorer_requests += 1
@@ -132,15 +130,14 @@ fn test_adaptive_ai() {
                 Ok(PlanetToExplorer::GenerateResourceResponse { resource: Some(_) }) => {
                     accepted_explorer_requests += 1
                 }
-                Err(_) => {
-                    refused_explorer_requests += 1;
-                    dont_have_energycell += 1;
+                Err(e) => {
+                    panic!("Expected GenerateResourceResponse with Ok(_) but received Err {e}");
                 }
                 _ => panic!("Expected GenerateResourceResponse but received different response"),
             }
         }
         // c. Increase sunray probability modifier to avoid endless loop
-        sunray_probability_modifier += 0.001;
+        sunray_probability_modifier += 0.01;
     }
 
     println!("\nPlanet is destroyed, concluding test.");
@@ -158,11 +155,6 @@ fn test_adaptive_ai() {
         ((refused_explorer_requests as f32
             / (refused_explorer_requests as f32 + accepted_explorer_requests as f32))
             * 100.0) as u32
-    );
-    println!(
-        "Did not have EnergyCell: {} - {}% of refused",
-        dont_have_energycell,
-        ((dont_have_energycell as f32 / refused_explorer_requests as f32) * 100.0) as u32
     );
     println!("Asteroids avoided: {}", asteroids_avoided);
     println!(

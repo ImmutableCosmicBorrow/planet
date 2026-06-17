@@ -95,12 +95,22 @@ fn generate_resource(
         return PlanetToExplorer::GenerateResourceResponse { resource: None };
     }
 
-    let resource = match to_generate {
-        BasicResourceType::Hydrogen => generator
+    let resource = if let BasicResourceType::Hydrogen = to_generate {
+        generator
             .make_hydrogen(state.cell_mut(0))
             .ok()
-            .map(BasicResource::Hydrogen),
-        _ => panic!("ICB planet can not generate any resource other than Hydrogen"),
+            .map(BasicResource::Hydrogen)
+    } else {
+        let mut payload = Payload::new();
+        payload.insert("message".into(), "Requested resource not supported!".into());
+        ai::Ai::log_planet_event(
+            state,
+            None,
+            EventType::InternalPlanetAction,
+            Channel::Warning,
+            payload,
+        );
+        return PlanetToExplorer::GenerateResourceResponse { resource: None };
     };
 
     let mut payload = Payload::new();
